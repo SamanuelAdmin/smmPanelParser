@@ -1,3 +1,5 @@
+import threading
+
 import requests
 from PySide6.QtCore import QObject, Slot
 from PySide6.QtWidgets import QMessageBox, QFileDialog
@@ -316,9 +318,11 @@ class Controller(QObject):
 		self.view.progress_bar.setMaximum(len(splitedServices))
 		saver.complete.connect(self.parsing_complete)
 		saver.start()
+		threading.Thread(target=saver.wait).start()
 
 	def parsing_complete(self):
 		print('[INFO] Парсинг завершен успешно.')
+
 		MessageBox(
 			title='Успех', text='Успешно завершил парсинг!',
 			type_mes=QMessageBox.Icon.Information

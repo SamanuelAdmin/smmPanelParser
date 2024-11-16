@@ -72,9 +72,12 @@ class ServicesSaver(QThread):
             file_c += 1
             filename = f'save({file_c})_{str(service_list[0]["currency_to_usd"]).replace(".", "_")}.xlsx'
             full_path = os.path.join(self.savingPath, filename)
+
+
             workbook = xlsxwriter.Workbook(full_path)
             worksheet = workbook.add_worksheet()
             col_num = 0
+
             for column in self.columns:
                 worksheet.write(0, col_num, column)
                 col_num += 1
@@ -83,12 +86,17 @@ class ServicesSaver(QThread):
                 self._write_service(service, worksheet)
 
             workbook.close()
+            del workbook, worksheet
+            self.services.remove(service_list)
+
             print(f'[+] SAVE {full_path}')
             self.on_save.emit()
 
     def _write_service(self, service: dict, worksheet: Worksheet) -> None:
         for col_num, column in zip(range(0, len(self.columns) + 1), self.columns):
             worksheet.write(self.row_num, col_num, service[column])
+            print(f'Saved {self.row_num}')
+
         self.row_num += 1
 
     def run(self):
