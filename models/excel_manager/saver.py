@@ -95,7 +95,6 @@ class ServicesSaver(QThread):
     def _write_service(self, service: dict, worksheet: Worksheet) -> None:
         for col_num, column in zip(range(0, len(self.columns) + 1), self.columns):
             worksheet.write(self.row_num, col_num, service[column])
-            print(f'Saved {self.row_num}')
 
         self.row_num += 1
 
