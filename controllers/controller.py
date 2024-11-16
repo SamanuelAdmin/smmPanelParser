@@ -318,6 +318,8 @@ class Controller(QObject):
 		self.view.progress_bar.setMaximum(len(splitedServices))
 		saver.complete.connect(self.parsing_complete)
 		saver.start()
+
+		# fixing the "QThread error" (when thread already has been closed after saver start). This line allow to new thread work
 		threading.Thread(target=saver.wait).start()
 
 	def parsing_complete(self):
