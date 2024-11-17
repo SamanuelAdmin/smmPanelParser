@@ -114,8 +114,23 @@ class ParsingManager(QThread):
 			average_time: dict[int, str] = atime_parser.parse(url).parsingResult
 			self.progress.emit()
 
-			general_result = parse(url, key, parser_currency_panel, parser_services, currency_converter, dns_getter, average_time, parser_balance) # atime
-			# general_result = parse(url, key, parser_currency_panel, parser_services, parser_balance, currency_converter, dns_getter) # not atime
+			general_result = parse(
+				url=url, 
+				key=key, 
+				parser_currency_panel=parser_currency_panel, 
+				parser_services=parser_services, 
+				parser_balance=parser_balance, 
+				currency_converter=currency_converter, 
+				dns_getter=dns_getter, 
+				average_time=average_time) # atime
+			# general_result = parse(
+			# 	url=url, 
+			# 	key=key, 
+			# 	parser_currency_panel=parser_currency_panel, 
+			# 	parser_services=parser_services, 
+			# 	parser_balance=parser_balance, 
+			# 	currency_converter=currency_converter, 
+			# 	dns_getter=dns_getter)
 
 			resultInfo.extend(general_result)
 			self.progress.emit()
