@@ -46,7 +46,7 @@ class AverageTimeParser:
     def parseTextPart(self, textPart: str):
         self.threadNumber += 1
         currentThreadNumber = self.threadNumber
-        print(f'Thread {self.threadNumber} started')
+        # print(f'Thread {self.threadNumber} started')
 
         client = Client(
             # proxies="http://117.54.114.101",
@@ -61,8 +61,8 @@ class AverageTimeParser:
                 serviceNum, aTimeValue = line.split(' - ')
                 self.parsingResult[int(serviceNum)] = aTimeValue
             except Exception as e:
-                print(currentThreadNumber, response.choices[0].message.content)
-                # pass
+                # print(e, currentThreadNumber, response.choices[0].message.content)
+                pass
 
         self.finishedProcess += 1
         return currentThreadNumber
