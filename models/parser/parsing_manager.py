@@ -106,34 +106,36 @@ class ParsingManager(QThread):
 		dns_getter = DnsGetter(dns_cache)
 
 		for panel in self.panelsForParsing:
-			panel_id, url, key, is_work, is_work_key = panel
+			try:
+				panel_id, url, key, is_work, is_work_key = panel
 
-			if not url or not key: continue
+				if not url or not key: continue
 
-			atime_parser = AverageTimeParser(requests.Session())
-			average_time: dict[int, str] = atime_parser.parse(url).parsingResult
-			self.progress.emit()
+				atime_parser = AverageTimeParser(requests.Session())
+				average_time: dict[int, str] = atime_parser.parse(url).parsingResult
+				self.progress.emit()
 
-			general_result = parse(
-				url=url, 
-				key=key, 
-				parser_currency_panel=parser_currency_panel, 
-				parser_services=parser_services, 
-				parser_balance=parser_balance, 
-				currency_converter=currency_converter, 
-				dns_getter=dns_getter, 
-				average_time=average_time) # atime
-			# general_result = parse(
-			# 	url=url, 
-			# 	key=key, 
-			# 	parser_currency_panel=parser_currency_panel, 
-			# 	parser_services=parser_services, 
-			# 	parser_balance=parser_balance, 
-			# 	currency_converter=currency_converter, 
-			# 	dns_getter=dns_getter)
+				general_result = parse(
+					url=url, 
+					key=key, 
+					parser_currency_panel=parser_currency_panel, 
+					parser_services=parser_services, 
+					parser_balance=parser_balance, 
+					currency_converter=currency_converter, 
+					dns_getter=dns_getter, 
+					average_time=average_time) # atime
+				# general_result = parse(
+				# 	url=url, 
+				# 	key=key, 
+				# 	parser_currency_panel=parser_currency_panel, 
+				# 	parser_services=parser_services, 
+				# 	parser_balance=parser_balance, 
+				# 	currency_converter=currency_converter, 
+				# 	dns_getter=dns_getter)
 
-			resultInfo.extend(general_result)
-			self.progress.emit()
+				resultInfo.extend(general_result)
+			finally:
+				self.progress.emit()
 
 		# returning result (panels info)
 		self.complete.emit(resultInfo)
