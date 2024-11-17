@@ -287,7 +287,7 @@ class Controller(QObject):
 		self.save_excel_for_parse_dialog.close()
 
 		# getting all panels
-		panels = [self.databaseService.get_panels(filterFunc=lambda panel: panel[3])[0]] # choice only working
+		panels = self.databaseService.get_panels(filterFunc=lambda panel: panel[3]) # choice only working
 
 		self.parser_panels = ParsingManager(
 			panels,
