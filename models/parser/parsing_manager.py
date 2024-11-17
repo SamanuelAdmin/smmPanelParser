@@ -7,6 +7,7 @@ from models.parser.dns import DnsGetter, IDnsGetter
 from models.parser.parser_currency import CurrencyRatesParser
 from models.parser.parser_panel_currency import PanelCurrencyParser, IPanelCurrencyParser
 from models.parser.parser_services import PanelServicesParser, IPanelServicesParser
+from models.parser.parser_balance import PanelBalanceParser, IPanelBalanceParser
 
 
 
@@ -14,18 +15,27 @@ def add_usd_amount(currency_converter: ICurrencyConverter, currency_code: str, a
 	converted_currency = currency_converter.convert(currency_code, amount)
 	service['currency_to_usd'] = converted_currency
 
+def balance_add_to_json(parsed_services: list[dict], balance):
+	for service in parsed_services:
+		service['balance'] = balance
+	return parsed_services
+
 def usd_add_to_json(currency_converter: ICurrencyConverter, parsed_services: list[dict]):
 	for service in parsed_services:
 		add_usd_amount(currency_converter, service['currency'], service['price'], service)
 
 	return parsed_services
 
-def info_add_to_json(parsed_services: list[dict], currency_code: str, average_time: dict):
+def atime_add_to_json(parsed_services: list[dict], average_time: dict):
 	for service in parsed_services:
-		service['currency'] = currency_code
-
 		if int(service['id']) in average_time: service['average_time'] = average_time[int(service['id'])]
 		else: service['average_time'] = ''
+
+	return parsed_services
+
+def currency_add_to_json(parsed_services: list[dict], currency_code: str):
+	for service in parsed_services:
+		service['currency'] = currency_code
 
 	return parsed_services
 
@@ -41,9 +51,10 @@ def parse(
 		url: str, key: str,
 		parser_currency_panel: IPanelCurrencyParser,
 		parser_services: IPanelServicesParser,
+		parser_balance: IPanelBalanceParser,
 		currency_converter: ICurrencyConverter,
 		dns_getter: IDnsGetter,
-		average_time
+		average_time=None
 	):
 	url = url.strip()
 	key = key.strip()
@@ -54,10 +65,14 @@ def parse(
 		print(err)
 
 	services = parser_services.parse(url, key)
+	balance = parser_balance.parse(url, key)
 
-	services = info_add_to_json(services, currency_code_panel, average_time)
+	if average_time:
+		services = atime_add_to_json(services, average_time)
+	services = currency_add_to_json(services, currency_code_panel)
 	services = usd_add_to_json(currency_converter, services)
 	services = dns_add_to_json(services, dns_getter)
+	services = balance_add_to_json(services, balance)
 
 	return services
 
@@ -80,9 +95,9 @@ class ParsingManager(QThread):
 		currency_cache = dict()
 		dns_cache = dict()
 
-
 		parser_currency_panel = PanelCurrencyParser(self.panelApiClient)
 		parser_services = PanelServicesParser(self.panelApiClient)
+		parser_balance = PanelBalanceParser(self.panelApiClient)
 		currency_parser = CurrencyRatesParser(self.currencyApiClient)
 		rate_usd = currency_parser.parse('USD')
 
@@ -99,7 +114,9 @@ class ParsingManager(QThread):
 			average_time: dict[int, str] = atime_parser.parse(url).parsingResult
 			self.progress.emit()
 
-			general_result = parse(url, key, parser_currency_panel, parser_services, currency_converter, dns_getter, average_time)
+			general_result = parse(url, key, parser_currency_panel, parser_services, currency_converter, dns_getter, average_time, parser_balance) # atime
+			# general_result = parse(url, key, parser_currency_panel, parser_services, parser_balance, currency_converter, dns_getter) # not atime
+
 			resultInfo.extend(general_result)
 			self.progress.emit()
 

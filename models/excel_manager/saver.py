@@ -50,7 +50,7 @@ class ServicesSaver(QThread):
     def __init__(self):
         super().__init__()
         self.row_num = 1
-        self.columns = ['id', 'name', 'url', 'max', 'min', 'price', 'currency', 'currency_to_usd', 'dns', 'average_time']
+        self.columns = ['id', 'name', 'url', 'max', 'min', 'price', 'currency', 'currency_to_usd', 'dns', 'average_time', 'balance']
 
         self.services: list[list[dict]] = None
         self.savingPath: str = None
@@ -94,7 +94,10 @@ class ServicesSaver(QThread):
 
     def _write_service(self, service: dict, worksheet: Worksheet) -> None:
         for col_num, column in zip(range(0, len(self.columns) + 1), self.columns):
-            worksheet.write(self.row_num, col_num, service[column])
+            try:
+                worksheet.write(self.row_num, col_num, service[column])
+            except KeyError:
+                continue
 
         self.row_num += 1
 

@@ -72,7 +72,7 @@ class AverageTimeParser:
         response = self.session.get(URL)
 
         if response.status_code == 200:
-            userText: str = BeautifulSoup(response.text, "html.parser").get_text(separator="\n", strip=True)
+            userText: str = BeautifulSoup(response.text, "lxml").get_text(separator="\n", strip=True)
 
             self.threadNumber = 0
             self.finishedProcess = 0
