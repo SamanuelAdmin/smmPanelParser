@@ -1,6 +1,7 @@
 from PySide6.QtCore import QThread, Signal
 import requests
 
+from models.parser.average_time_parser import AverageTimeParser
 from models.parser.currency_converter import CurrencyConverter, ICurrencyConverter
 from models.parser.dns import DnsGetter, IDnsGetter
 from models.parser.parser_currency import CurrencyRatesParser
@@ -19,9 +20,13 @@ def usd_add_to_json(currency_converter: ICurrencyConverter, parsed_services: lis
 
 	return parsed_services
 
-def currency_panel_add_to_json(parsed_services: list[dict], currency_code: str):
+def info_add_to_json(parsed_services: list[dict], currency_code: str, average_time: dict):
 	for service in parsed_services:
 		service['currency'] = currency_code
+
+		if int(service['id']) in average_time: service['average_time'] = average_time[int(service['id'])]
+		else: service['average_time'] = ''
+
 	return parsed_services
 
 def dns_add_to_json(parsed_services: list[dict], dns_getter: IDnsGetter):
@@ -37,7 +42,8 @@ def parse(
 		parser_currency_panel: IPanelCurrencyParser,
 		parser_services: IPanelServicesParser,
 		currency_converter: ICurrencyConverter,
-		dns_getter: IDnsGetter
+		dns_getter: IDnsGetter,
+		average_time
 	):
 	url = url.strip()
 	key = key.strip()
@@ -46,11 +52,10 @@ def parse(
 		currency_code_panel = parser_currency_panel.parse(url, key)
 	except Exception as err:
 		print(err)
-		raise err
 
 	services = parser_services.parse(url, key)
 
-	services = currency_panel_add_to_json(services, currency_code_panel)
+	services = info_add_to_json(services, currency_code_panel, average_time)
 	services = usd_add_to_json(currency_converter, services)
 	services = dns_add_to_json(services, dns_getter)
 
@@ -69,6 +74,7 @@ class ParsingManager(QThread):
 		self.currencyApiClient = currencyApiClient
 
 
+	# main parser func
 	def main(self):
 		resultInfo = []
 		currency_cache = dict()
@@ -78,7 +84,6 @@ class ParsingManager(QThread):
 		parser_currency_panel = PanelCurrencyParser(self.panelApiClient)
 		parser_services = PanelServicesParser(self.panelApiClient)
 		currency_parser = CurrencyRatesParser(self.currencyApiClient)
-
 		rate_usd = currency_parser.parse('USD')
 
 		currency_converter = CurrencyConverter(currency_parser, currency_cache, rate_usd)
@@ -90,8 +95,12 @@ class ParsingManager(QThread):
 
 			if not url or not key: continue
 
-			r = parse(url, key, parser_currency_panel, parser_services, currency_converter, dns_getter)
-			resultInfo.extend(r)
+			atime_parser = AverageTimeParser(requests.Session())
+			average_time: dict[int, str] = atime_parser.parse(url).parsingResult
+			self.progress.emit()
+
+			general_result = parse(url, key, parser_currency_panel, parser_services, currency_converter, dns_getter, average_time)
+			resultInfo.extend(general_result)
 			self.progress.emit()
 
 		# returning result (panels info)

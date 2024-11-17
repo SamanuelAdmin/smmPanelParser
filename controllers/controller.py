@@ -287,7 +287,7 @@ class Controller(QObject):
 		self.save_excel_for_parse_dialog.close()
 
 		# getting all panels
-		panels = self.databaseService.get_panels(filterFunc=lambda panel: panel[3]) # choice only working
+		panels = [self.databaseService.get_panels(filterFunc=lambda panel: panel[3])[0]] # choice only working
 
 		self.parser_panels = ParsingManager(
 			panels,
@@ -297,7 +297,7 @@ class Controller(QObject):
 
 		self.parser_panels.complete.connect(self.save_services)
 		self.view.progress_bar.setValue(0)
-		self.view.progress_bar.setMaximum(len(panels))
+		self.view.progress_bar.setMaximum(len(panels) * 2)
 		self.parser_panels.progress.connect(self.view.update_progress)
 
 		self.parser_panels.start()

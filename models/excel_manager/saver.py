@@ -50,7 +50,7 @@ class ServicesSaver(QThread):
     def __init__(self):
         super().__init__()
         self.row_num = 1
-        self.columns = ['id', 'name', 'url', 'max', 'min', 'price', 'currency', 'currency_to_usd', 'dns']
+        self.columns = ['id', 'name', 'url', 'max', 'min', 'price', 'currency', 'currency_to_usd', 'dns', 'average_time']
 
         self.services: list[list[dict]] = None
         self.savingPath: str = None
