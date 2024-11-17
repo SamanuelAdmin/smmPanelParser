@@ -5,6 +5,8 @@ from g4f.client import Client # https://github.com/xtekky/gpt4free/blob/main/doc
 import concurrent.futures
 import copy
 
+from models.api_manager.api_client import IPanelApiClient
+
 
 def getPrompt(text):
     return f'''Parse the values in format
@@ -35,11 +37,11 @@ NOTICE: IF YOU CANNOT FIND ANY SERVICE INFORMATION, JUST SAY "NONE"'''
 
 
 class AverageTimeParser:
-    def __init__(self, session: requests.Session):
+    def __init__(self, api_client: IPanelApiClient):
         self.parsingResult = {}
 
-        self.session: requests.Session = session
-        self.session.headers.update({'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.5112.79 Safari/537.36'})
+        self.api_client = api_client
+        self.api_client.updateHeaders({'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.5112.79 Safari/537.36'})
 
     def parseTextPart(self, textPart: str):
         self.threadNumber += 1
@@ -66,32 +68,33 @@ class AverageTimeParser:
         return currentThreadNumber
 
 
-    def parse(self, URL: str):
-        URL += 'en/services'
+    def parse(self, url: str):
+        url += 'en/services'
 
-        response = self.session.get(URL)
+        response = self.api_client.get(url)
+        if not response.success:
+            return
+        
+        userText: str = BeautifulSoup(response.data.text, "lxml").get_text(separator="\n", strip=True)
 
-        if response.status_code == 200:
-            userText: str = BeautifulSoup(response.text, "lxml").get_text(separator="\n", strip=True)
+        self.threadNumber = 0
+        self.finishedProcess = 0
 
-            self.threadNumber = 0
-            self.finishedProcess = 0
+        # split for parts (20000 symbols in one part)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+            def grouper(iterable, n):
+                args = [iter(iterable)] * n
+                return zip(*args)
 
-            # split for parts (20000 symbols in one part)
-            with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-                def grouper(iterable, n):
-                    args = [iter(iterable)] * n
-                    return zip(*args)
+            splitedText: list = [
+                    ''.join(i) for i in grouper(userText, 20000)
+                ]
 
-                splitedText: list = [
-                        ''.join(i) for i in grouper(userText, 20000)
-                    ]
+            for textPart in splitedText:
+                executor.submit(self.parseTextPart, textPart)
 
-                for textPart in splitedText:
-                    executor.submit(self.parseTextPart, textPart)
-
-                # waiting until the end
-                while self.finishedProcess != len(splitedText): pass
+            # waiting until the end
+            while self.finishedProcess != len(splitedText): pass
 
         return self
 

@@ -104,41 +104,48 @@ class ParsingManager(QThread):
 		currency_converter = CurrencyConverter(currency_parser, currency_cache, rate_usd)
 
 		dns_getter = DnsGetter(dns_cache)
+		try:
+			for panel in self.panelsForParsing:
+				try:
+					panel_id, url, key, is_work, is_work_key = panel
 
-		for panel in self.panelsForParsing:
-			try:
-				panel_id, url, key, is_work, is_work_key = panel
+					if not url or not key: continue
 
-				if not url or not key: continue
+					try:
+						atime_parser = AverageTimeParser(self.panelApiClient)
+						average_time_res = atime_parser.parse(url)
+						if average_time_res:
+							average_time: dict[int, str] | None = average_time_res.parsingResult
 
-				atime_parser = AverageTimeParser(requests.Session())
-				average_time: dict[int, str] = atime_parser.parse(url).parsingResult
-				self.progress.emit()
+							general_result = parse(
+								url=url, 
+								key=key, 
+								parser_currency_panel=parser_currency_panel, 
+								parser_services=parser_services, 
+								parser_balance=parser_balance, 
+								currency_converter=currency_converter, 
+								dns_getter=dns_getter, 
+								average_time=average_time) # atime
+							resultInfo.extend(general_result)
+					finally:
+						self.progress.emit()
+						print('Прогресс парсинга 1')
+					# general_result = parse(
+					# 	url=url, 
+					# 	key=key, 
+					# 	parser_currency_panel=parser_currency_panel, 
+					# 	parser_services=parser_services, 
+					# 	parser_balance=parser_balance, 
+					# 	currency_converter=currency_converter, 
+					# 	dns_getter=dns_getter)
 
-				general_result = parse(
-					url=url, 
-					key=key, 
-					parser_currency_panel=parser_currency_panel, 
-					parser_services=parser_services, 
-					parser_balance=parser_balance, 
-					currency_converter=currency_converter, 
-					dns_getter=dns_getter, 
-					average_time=average_time) # atime
-				# general_result = parse(
-				# 	url=url, 
-				# 	key=key, 
-				# 	parser_currency_panel=parser_currency_panel, 
-				# 	parser_services=parser_services, 
-				# 	parser_balance=parser_balance, 
-				# 	currency_converter=currency_converter, 
-				# 	dns_getter=dns_getter)
+				finally:
+					self.progress.emit()
+					print('Прогресс парсинга 2')
 
-				resultInfo.extend(general_result)
-			finally:
-				self.progress.emit()
-
-		# returning result (panels info)
-		self.complete.emit(resultInfo)
+			# returning result (panels info)
+		finally:
+			self.complete.emit(resultInfo)
 
 	def run(self):
 		self.main()

@@ -82,6 +82,8 @@ class Controller(QObject):
 		key = self.new_panel_dialog.lineEdit.text()
 		if not url or not key:
 			MessageBox('Ошибка', 'Пожалуйста, заполните все поля', type_mes=QMessageBox.Icon.Critical)
+		elif not 'https://' in url:
+			MessageBox('Ошибка', 'Введенный url неправильный, нехвататет протокола https://', type_mes=QMessageBox.Icon.Critical)
 		else:
 			self.databaseService.add_panel(url, key)
 			self.load_panel_table()  # refresh panel table
@@ -288,6 +290,10 @@ class Controller(QObject):
 
 		# getting all panels
 		panels = self.databaseService.get_panels(filterFunc=lambda panel: panel[3]) # choice only working
+		try: assert len(panels) > 0
+		except AssertionError: 
+			MessageBox(title='Ошибка', text='Нечего парсить, так как все панели не рабочие/с нерабочим ключом', type_mes=QMessageBox.Icon.Critical)
+			return
 
 		self.parser_panels = ParsingManager(
 			panels,
@@ -305,6 +311,12 @@ class Controller(QObject):
 	@Slot(list)
 	def save_services(self, services):
 		self.view.progress_bar.setValue(0) # clear progress bar
+
+		try: assert len(services) > 0
+		except AssertionError: 
+			print('Нечего сохранять')
+			self.parsing_complete()
+			return
 
 		services = sorted(services, key=lambda x: float(x["currency_to_usd"]))
 

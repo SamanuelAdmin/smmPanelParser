@@ -102,7 +102,7 @@ class ServicesSaver(QThread):
         self.row_num += 1
 
     def run(self):
-        assert self.services and self.savingPath
-
-        self.save()
-        self.complete.emit()
+        try:
+            self.save()
+        finally:
+            self.complete.emit()
