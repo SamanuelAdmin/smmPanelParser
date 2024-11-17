@@ -92,16 +92,24 @@ class Controller(QObject):
 
 	# ================== EDIT PANEL ==================
 	def open_dialog_edit_panel(self) -> None:
-		selected_rows = self.view.tableView.selectionModel().selectedRows(column=0) # забираем id записей
-		if len(selected_rows) == 0 or len(selected_rows) > 1:
-			MessageBox('Ошибка', 'Пожалуйста, выберите ОДНУ запись, которую хотите редактировать', type_mes=QMessageBox.Icon.Critical)
-		else:
-			self.edit_panel_dialog = edit_panel_view.EditPanel()
-			self.edit_panel_dialog.edit.clicked.connect(lambda: self.edit_panel(selected_rows))
-			self.edit_panel_dialog.exec()
+		selected_row = self.view.tableView.selectionModel().selectedRows(column=0) # забираем id записи
 
-	def edit_panel(self, selected_rows) -> None:
-		id = selected_rows[0].data()
+		if len(selected_row) == 1:
+			self.edit_panel_dialog = edit_panel_view.EditPanel()
+
+			panel_id, url, key, is_work, is_work_key = self.databaseService.get_panels_by(panel_id=selected_row[0].data())
+
+			self.edit_panel_dialog.lineEdit_2.setText(url)  # API url to change
+			self.edit_panel_dialog.lineEdit.setText(key)   # API key to change
+
+			self.edit_panel_dialog.edit.clicked.connect(lambda: self.edit_panel(selected_row))
+			return self.edit_panel_dialog.exec()
+
+		MessageBox('Ошибка', 'Пожалуйста, выберите ОДНУ запись, которую хотите редактировать',
+				   type_mes=QMessageBox.Icon.Critical)
+
+	def edit_panel(self, selected_row) -> None:
+		id = selected_row[0].data()
 		url = self.edit_panel_dialog.lineEdit_2.text()
 		key = self.edit_panel_dialog.lineEdit.text()
 

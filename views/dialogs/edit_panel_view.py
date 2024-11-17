@@ -53,6 +53,7 @@ class EditPanel(QDialog):
 
     def retranslateUi(self):
         self.label.setText(QCoreApplication.translate("self", u"API URL", None))
-        self.lineEdit_2.setPlaceholderText("")
+        # self.lineEdit_2.setText("API")
+        # self.lineEdit.setText("KEY")
         self.label_2.setText(QCoreApplication.translate("self", u"API KEY", None))
         self.edit.setText(QCoreApplication.translate("self", u"EDIT", None))
