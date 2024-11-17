@@ -49,6 +49,13 @@ class Controller(QObject):
 		self.connect()
 		self.load_panel_table()
 
+	def panels_table_update(function):
+		def wrapper(self, *args, **kwargs):
+			function(self, *args, **kwargs)
+			self.view.set_table_size()
+
+		return wrapper
+
 	def load_panel_table(self) -> None:
 		panel_list = self.databaseService.get_panels()
 		table_model = panels_table.generatePanelsTable(panel_list)  # generate panel table
@@ -77,6 +84,7 @@ class Controller(QObject):
 		self.new_panel_dialog.add.clicked.connect(self.add_panel)
 		self.new_panel_dialog.exec()
 
+	@panels_table_update
 	def add_panel(self) -> None:
 		url = self.new_panel_dialog.lineEdit_2.text()
 		key = self.new_panel_dialog.lineEdit.text()
@@ -108,6 +116,8 @@ class Controller(QObject):
 		MessageBox('Ошибка', 'Пожалуйста, выберите ОДНУ запись, которую хотите редактировать',
 				   type_mes=QMessageBox.Icon.Critical)
 
+
+	@panels_table_update
 	def edit_panel(self, selected_row) -> None:
 		id = selected_row[0].data()
 		url = self.edit_panel_dialog.lineEdit_2.text()
@@ -131,6 +141,7 @@ class Controller(QObject):
 		for row in query:
 			self.databaseService.delete_panel(int(row[0]))
 
+	@panels_table_update
 	def delete_panels(self):
 		if self.view.checkBox_delete_selected_sites.isChecked(): # delete_selected_sites
 			selected_rows = self.view.tableView.selectionModel().selectedRows(column=0)
@@ -153,6 +164,7 @@ class Controller(QObject):
 	# ================== LOADER ==================
 	##############################################
 
+	@panels_table_update
 	def import_excel_to_panels(self):
 		file_dialog = choice_file_view.FileDialog(
 			'Выберите excel файл(-ы), который вы хотите импортировать',
@@ -180,6 +192,7 @@ class Controller(QObject):
 			MessageBox('Успех', 'Успешно импортировал excel файл в бд!', type_mes=QMessageBox.Icon.Information)
 
 		self.load_panel_table()
+
 
 	#  EXPORT PANELS TO EXCEL
 	def open_export_excel_dialog(self):
@@ -234,6 +247,7 @@ class Controller(QObject):
 	# ================= CHECKER ==================
 	##############################################
 
+	@panels_table_update
 	def on_check_completed(self):
 		self.load_panel_table()
 		MessageBox(title='Успех', text='Успешно завершил проверку!', type_mes=QMessageBox.Icon.Information)

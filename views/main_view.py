@@ -202,76 +202,69 @@ class MainWindow(QMainWindow):
 	def view_table(self, table_model):
 		self.tableView.setModel(table_model)
 
+		self.set_table_size()
+
+		self.tableView.resizeColumnsToContents()
+		self.tableView.resizeRowsToContents()
+
+	def set_table_size(self):
 		header = self.tableView.horizontalHeader()
 		header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
 		header.setSectionResizeMode(1, QHeaderView.Stretch)
 		header.setSectionResizeMode(2, QHeaderView.Stretch)
 
-		self.tableView.resizeColumnsToContents()
-		self.tableView.resizeRowsToContents()
+# class Ui_DialogEditPanel(object):
+# 	def setupUi(self, Dialog):
+# 		if not Dialog.objectName():
+# 			Dialog.setObjectName(u"Dialog")
+# 		Dialog.resize(300, 110)
+# 		Dialog.setMinimumSize(QSize(300, 110))
+# 		Dialog.setMaximumSize(QSize(300, 110))
+# 		self.gridLayout = QGridLayout(Dialog)
+# 		self.gridLayout.setObjectName(u"gridLayout")
+# 		self.label = QLabel(Dialog)
+# 		self.label.setObjectName(u"label")
+#
+# 		self.gridLayout.addWidget(self.label, 0, 0, 1, 1)
+#
+# 		self.lineEdit_2 = QLineEdit(Dialog)
+# 		self.lineEdit_2.setObjectName(u"lineEdit_2")
+#
+# 		self.gridLayout.addWidget(self.lineEdit_2, 0, 1, 1, 1)
+#
+# 		self.label_2 = QLabel(Dialog)
+# 		self.label_2.setObjectName(u"label_2")
+#
+# 		self.gridLayout.addWidget(self.label_2, 1, 0, 1, 1)
+#
+# 		self.lineEdit = QLineEdit(Dialog)
+# 		self.lineEdit.setObjectName(u"lineEdit")
+#
+# 		self.gridLayout.addWidget(self.lineEdit, 1, 1, 1, 1)
+#
+# 		self.edit = QPushButton(Dialog)
+# 		self.edit.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+# 		self.edit.setObjectName(u"btn_edit")
+# 		sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
+# 		sizePolicy.setHorizontalStretch(0)
+# 		sizePolicy.setVerticalStretch(0)
+# 		sizePolicy.setHeightForWidth(self.edit.sizePolicy().hasHeightForWidth())
+# 		# self.btn_edit.setSizePolicy(sizePolicy)
+# 		# self.btn_edit.setStyleSheet(u"font-size: 11px;")
+#
+# 		self.gridLayout.addWidget(self.edit, 2, 0, 1, 2)
+#
+#
+# 		self.retranslateUi(Dialog)
+#
+# 		QMetaObject.connectSlotsByName(Dialog)
+# 	# setupUi
+#
+# 	def retranslateUi(self, Dialog) -> None:
+# 		Dialog.setWindowTitle(QCoreApplication.translate("Dialog", u"Dialog", None))
+# 		self.label.setText(QCoreApplication.translate("Dialog", u"API URL", None))
+# 		self.lineEdit_2.setPlaceholderText("")
+# 		self.label_2.setText(QCoreApplication.translate("Dialog", u"API KEY", None))
+# 		self.edit.setText(QCoreApplication.translate("Dialog", u"EDIT", None))
+# 	# retranslateUi
 
-class Ui_DialogEditPanel(object):
-	def setupUi(self, Dialog):
-		if not Dialog.objectName():
-			Dialog.setObjectName(u"Dialog")
-		Dialog.resize(300, 110)
-		Dialog.setMinimumSize(QSize(300, 110))
-		Dialog.setMaximumSize(QSize(300, 110))
-		self.gridLayout = QGridLayout(Dialog)
-		self.gridLayout.setObjectName(u"gridLayout")
-		self.label = QLabel(Dialog)
-		self.label.setObjectName(u"label")
-
-		self.gridLayout.addWidget(self.label, 0, 0, 1, 1)
-
-		self.lineEdit_2 = QLineEdit(Dialog)
-		self.lineEdit_2.setObjectName(u"lineEdit_2")
-
-		self.gridLayout.addWidget(self.lineEdit_2, 0, 1, 1, 1)
-
-		self.label_2 = QLabel(Dialog)
-		self.label_2.setObjectName(u"label_2")
-
-		self.gridLayout.addWidget(self.label_2, 1, 0, 1, 1)
-
-		self.lineEdit = QLineEdit(Dialog)
-		self.lineEdit.setObjectName(u"lineEdit")
-
-		self.gridLayout.addWidget(self.lineEdit, 1, 1, 1, 1)
-
-		self.edit = QPushButton(Dialog)
-		self.edit.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-		self.edit.setObjectName(u"btn_edit")
-		sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
-		sizePolicy.setHorizontalStretch(0)
-		sizePolicy.setVerticalStretch(0)
-		sizePolicy.setHeightForWidth(self.edit.sizePolicy().hasHeightForWidth())
-		# self.btn_edit.setSizePolicy(sizePolicy)
-		# self.btn_edit.setStyleSheet(u"font-size: 11px;")
-
-		self.gridLayout.addWidget(self.edit, 2, 0, 1, 2)
-
-
-		self.retranslateUi(Dialog)
-
-		QMetaObject.connectSlotsByName(Dialog)
-	# setupUi
-
-	def retranslateUi(self, Dialog) -> None:
-		Dialog.setWindowTitle(QCoreApplication.translate("Dialog", u"Dialog", None))
-		self.label.setText(QCoreApplication.translate("Dialog", u"API URL", None))
-		self.lineEdit_2.setPlaceholderText("")
-		self.label_2.setText(QCoreApplication.translate("Dialog", u"API KEY", None))
-		self.edit.setText(QCoreApplication.translate("Dialog", u"EDIT", None))
-	# retranslateUi
-
-
-# class Main(Qself):
-# 	def __init__(self):
-# 		super(Main, self).__init__()
-
-# 		ui = Ui_self()
-# 		ui.setupUi(self)
-
-# 		# self.db = db
-# 		# self.i = Interface(ui, self.db, loggerBuffer)
