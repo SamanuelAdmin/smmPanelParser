@@ -314,7 +314,7 @@ class Controller(QObject):
 		panels = self.databaseService.get_panels(filterFunc=lambda panel: panel[3]) # choice only working
 		try: assert len(panels) > 0
 		except AssertionError: 
-			MessageBox(title='Ошибка', text='Нечего парсить, так как все панели не рабочие/с нерабочим ключом', type_mes=QMessageBox.Icon.Critical)
+			MessageBox(title='Ошибка', text='Нечего парсить, так как все панели нерабочие или с нерабочим ключом', type_mes=QMessageBox.Icon.Critical)
 			return
 
 		self.parser_panels = ParsingManager(
@@ -336,7 +336,7 @@ class Controller(QObject):
 
 		try: assert len(services) > 0
 		except AssertionError: 
-			print('Нечего сохранять')
+			MessageBox(title='Ошибка', text='Нечего сохранять', type_mes=QMessageBox.Icon.Critical)
 			self.parsing_complete()
 			return
 
