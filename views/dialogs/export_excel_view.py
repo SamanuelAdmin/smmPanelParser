@@ -54,3 +54,4 @@ class ExportExcelDialog(QDialog):
 			self.save_btn.setText(f'Экспорт в {text}.xlsx')
 		else:
 			self.save_btn.setText(f'Экспорт')
+			#
