@@ -342,7 +342,11 @@ class Controller(QObject):
 
 		services = sorted(services, key=lambda x: float(x["currency_to_usd"]))
 
-		splitedServices = ServicesSpliter().split(services, 1000)
+		splitedServices = ServicesSpliter().split(
+			services,
+			int(self.save_excel_for_parse_dialog.max_count_services.text()) \
+				if self.save_excel_for_parse_dialog.max_count_services.text() else 1000
+		)
 
 		saver = ServicesSaver() \
 				.setServices(splitedServices) \

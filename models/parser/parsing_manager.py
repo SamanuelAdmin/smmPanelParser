@@ -112,21 +112,20 @@ class ParsingManager(QThread):
 					if not url or not key: continue
 
 					try:
-						atime_parser = AverageTimeParser(self.panelApiClient)
-						average_time_res = atime_parser.parse(url)
-						if average_time_res:
-							average_time: dict[int, str] | None = average_time_res.parsingResult
+						atime_parser = AverageTimeParser()
+						atime_parser.parse(url + 'services')
+						average_time_result: dict[int, str] | None = atime_parser.parsingResult
 
-							general_result = parse(
-								url=url, 
-								key=key, 
-								parser_currency_panel=parser_currency_panel, 
-								parser_services=parser_services, 
-								parser_balance=parser_balance, 
-								currency_converter=currency_converter, 
-								dns_getter=dns_getter, 
-								average_time=average_time) # atime
-							resultInfo.extend(general_result)
+						general_result = parse(
+							url=url,
+							key=key,
+							parser_currency_panel=parser_currency_panel,
+							parser_services=parser_services,
+							parser_balance=parser_balance,
+							currency_converter=currency_converter,
+							dns_getter=dns_getter,
+							average_time=average_time_result) # atime
+						resultInfo.extend(general_result)
 					finally:
 						self.progress.emit()
 						print('Прогресс парсинга 1')
