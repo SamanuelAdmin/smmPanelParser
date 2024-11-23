@@ -115,6 +115,7 @@ class ParsingManager(QThread):
 						atime_parser = AverageTimeParser()
 						atime_parser.parse(url + 'services')
 						average_time_result: dict[int, str] | None = atime_parser.parsingResult
+						self.progress.emit()
 
 						general_result = parse(
 							url=url,
