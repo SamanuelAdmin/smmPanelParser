@@ -152,7 +152,6 @@ class AverageTimeParser:
                             try: serviceId = serviceId.split(': ')[1]
                             except: pass
 
-                        print(f'"{serviceId}", {serviceAverageTime}')
                         self.parsingResult[int(serviceId)] = serviceAverageTime
 
                         isParsed = True
