@@ -1,22 +1,36 @@
 import sqlite3
-from .metaclasses.singleton import SingletonMeta
+from models.metaclasses.singleton import SingletonMeta
 
 class UniqueError(Exception):
 	def __str__(self):
 		return 'Ошибка, такая запись уже есть'
 	
+
 class DatabaseConfig:
+	@classmethod
+	def handle_value(cls, v):
+		if isinstance(v, bool): return int(v)
+		elif isinstance(v, str): return f'"{v.strip()}"'
+		else: return v
+
+	@classmethod
+	def generate_params_string(cls, **kwargs) -> str:
+		res = ', '.join([f'{k}={cls.handle_value(v)}' for k, v in kwargs.items() if v != None])
+		return res
+
+class PanelsDatabaseConfig:
 	unique_error = 'UNIQUE constraint failed'
 
 	create_table = '''CREATE TABLE IF NOT EXISTS panels (
-					id INTEGER PRIMARY KEY,
+					id INTEGER PRIMARY KEY AUTOINCREMENT,
 					url TEXT NOT NULL,
 					api_key TEXT NOT NULL,
 					work BOOLEAN DEFAULT true,
 					valid_api_key BOOLEAN DEFAULT true)'''
 
 	add_panel = '''INSERT INTO panels (url, api_key) VALUES (?, ?)'''
-	edit_panel = '''UPDATE panels SET url=?, api_key=?, work=?, valid_api_key=? WHERE id=?'''
+	# edit_panel = '''UPDATE panels SET url=?, api_key=?, work=?, valid_api_key=? WHERE id=?'''
+	edit_panel = '''UPDATE panels SET {params} WHERE id={id}'''
 	edit_panel_work = '''UPDATE panels SET work=? WHERE id=?'''
 	edit_panel_valid_api_key = '''UPDATE panels SET valid_api_key=? WHERE id=?'''
 	get_panels = '''SELECT * FROM panels'''
@@ -25,14 +39,40 @@ class DatabaseConfig:
 	get_panels_by_work = '''SELECT * FROM panels WHERE work=?'''
 	get_panels_by_worked_keys_sites = '''SELECT * FROM panels WHERE valid_api_key=?'''
 
+class ServicesDatabaseConfig:
+	columns = ['service_id', 'url', 'name', 'max', 'min', 'price', 'currency', 'currency_to_usd', 'dns', 'average_time', 'balance', 'panel_id']
+
+	create_table = '''CREATE TABLE IF NOT EXISTS services (
+					id INTEGER PRIMARY KEY AUTOINCREMENT,
+					service_id INTEGER NOT NULL,
+					url TEXT NOT NULL,
+					name TEXT NOT NULL,
+					max INTEGER NOT NULL,
+					min INTEGER NOT NULL,
+					price REAL DEFAULT 0,
+					currency TEXT DEFAULT "$",
+					currency_to_usd REAL DEFAULT 0,
+					dns TEXT NOT NULL,
+					average_time TEXT DEFAULT "no average",
+					balance REAL DEFAULT 0,
+					panel_id INTEGER,
+					FOREIGN KEY(panel_id) REFERENCES panels(id) ON DELETE CASCADE ON UPDATE CASCADE)'''
+	add_service = f'''INSERT INTO services ({", ".join([column for column in columns])}) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)'''
+	# add_service = f'''
+	# INSERT INTO services ({', '.join([column for column in columns])}) 
+	# VALUES ({[', '.join(['?' for _ in columns])]})'''
+
+	edit_service = '''
+	UPDATE services SET {params} 
+	WHERE id={id}
+	'''
+
 
 class Database(metaclass=SingletonMeta):
 	__classobj = None
-	__db_name = 'panels.db'
+	__db_name = 'database.db'
 	__connection: sqlite3.Connection = None
 	__cursor: sqlite3.Cursor = None
-
-
 
 	def __del__(self) -> None:
 		try: Database.close()
@@ -69,52 +109,67 @@ class Database(metaclass=SingletonMeta):
 					cls.__connection.commit()
 			if 'SELECT' in args[0]:
 				return res.fetchall()
-	
+			
 	@classmethod
 	def create_table(cls) -> None:
-		cls.execute(DatabaseConfig.create_table)
+		cls.execute(PanelsDatabaseConfig.create_table)
+		cls.execute(ServicesDatabaseConfig.create_table)
 
-	def add_panel(self, url, api_key) -> None:
+	def add_panel(self, url: str, api_key: str) -> None:
 		try:
-			Database.execute(DatabaseConfig.add_panel, (url.strip(), api_key.strip(),))
+			Database.execute(
+				PanelsDatabaseConfig.add_panel,
+				(url.strip(), api_key.strip(), )
+			)
 		except Exception as err:
-			if DatabaseConfig.unique_error in str(err):
-				raise UniqueError
 			raise err
-
-	def edit_panel(self, url, api_key, id, work, valid_api_key) -> None:
+		
+	def add_service(self, 
+				panel_id: int, service_id: int, 
+				url: str, name: str,
+				max: int, min: int,
+				price: float, currency: str,
+				currency_to_usd: float, dns: str,
+				average_time: str, balance: str) -> None:
 		try:
-			Database.execute(DatabaseConfig.edit_panel, (url.strip(), api_key.strip(), work, valid_api_key, id))
+			Database.execute(ServicesDatabaseConfig.add_service, (service_id, url, name, max, min, price, currency, currency_to_usd, dns, average_time, balance, panel_id, ))
 		except Exception as err:
-			if DatabaseConfig.unique_error in str(err):
-				raise UniqueError
+			raise err
+		
+	def edit_panel(self, id: int, url: str=None, api_key: str=None, work: bool=None, valid_api_key: bool=None) -> None:
+		try:
+			Database.execute(
+				PanelsDatabaseConfig.edit_panel.format(
+					params=DatabaseConfig.generate_params_string(url=url, api_key=api_key, work=work, valid_api_key=valid_api_key),
+					id=id
+				)
+			)
+		except Exception as err:
 			raise err
 
 	def get_panels(self) -> list:
-		return Database.execute(DatabaseConfig.get_panels)
+		return Database.execute(PanelsDatabaseConfig.get_panels)
 	
 	def get_panel_by_id(self, id) -> list:
 		try:
-			return Database.execute(DatabaseConfig.get_panel_by_id, (id,))
+			return Database.execute(PanelsDatabaseConfig.get_panel_by_id, (id,))
 		except Exception as err:
 			print(f"Неизвестная ошибка при получении записи по id({id=}) из бд\n", err)
 	
 	def delete_panel_by_id(self, id) -> None:
 		try:
-			Database.execute(DatabaseConfig.delete_panel_by_id, (id,))
+			Database.execute(PanelsDatabaseConfig.delete_panel_by_id, (id,))
 		except Exception as err:
 			print(f"Неизвестная ошибка при получении записи по id({id=}) из бд\n", err)
 
 	def get_panels_by_work(self, is_work=False) -> list:
 		try:
-			return Database.execute(DatabaseConfig.get_panels_by_work, (is_work, ))
+			return Database.execute(PanelsDatabaseConfig.get_panels_by_work, (is_work, ))
 		except Exception as err:
 			print(f"Неизвестная ошибка при получении нерабочих панелей из бд\n", err)
 	
 	def get_panels_by_worked_keys_sites(self, is_worked_keys_sites=False) -> list:
 		try:
-			return Database.execute(DatabaseConfig.get_panels_by_worked_keys_sites, (is_worked_keys_sites, ))
+			return Database.execute(PanelsDatabaseConfig.get_panels_by_worked_keys_sites, (is_worked_keys_sites, ))
 		except Exception as err:
 			print(f"Неизвестная ошибка при получении нерабочих панелей из бд\n", err)
-	
-		

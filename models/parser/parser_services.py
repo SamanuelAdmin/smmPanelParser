@@ -3,7 +3,7 @@ from abc import abstractmethod, ABC
 
 class IPanelServicesParser(ABC):
 	@abstractmethod
-	async def parse(self, url: str, key: str) -> list[dict] | None:
+	def parse(self, url: str, key: str) -> list[dict] | None:
 		pass
 
 

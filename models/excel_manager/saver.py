@@ -1,12 +1,13 @@
 from abc import ABC, abstractmethod
 
 import os
-from idlelib.window import add_windows_to_menu
 
 import xlsxwriter
+
 from PySide6.QtCore import Signal, QThread
 from xlsxwriter.worksheet import Worksheet
 
+from models.database_service import DatabaseService
 
 class ISaverServices(ABC):
     @abstractmethod
@@ -55,6 +56,7 @@ class ServicesSaver(QThread):
         self.services: list[list[dict]] = None
         self.savingPath: str = None
 
+
     def setServices(self, services: list[list[dict]]):
         self.services = services
         return self
@@ -62,7 +64,7 @@ class ServicesSaver(QThread):
     def setSavingPath(self, path: str):
         self.savingPath = path
         return self
-
+    
     def save(self) -> None:
         file_c = 0
 

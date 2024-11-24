@@ -8,7 +8,8 @@ from models.parser.parser_currency import CurrencyRatesParser
 from models.parser.parser_panel_currency import PanelCurrencyParser, IPanelCurrencyParser
 from models.parser.parser_services import PanelServicesParser, IPanelServicesParser
 from models.parser.parser_balance import PanelBalanceParser, IPanelBalanceParser
-
+from models.database_service import DatabaseService
+from models.database_controller import Database
 
 
 def add_usd_amount(currency_converter: ICurrencyConverter, currency_code: str, amount: float, service: dict):
@@ -77,17 +78,42 @@ def parse(
 	return services
 
 
+class SaverServices:
+	def __init__(self, databaseService: DatabaseService):
+		self.databaseService = databaseService
+
+	def save_to_database(self, panel_id: int, parsed_services: list[dict]):
+		for service in parsed_services:
+			service_id = service['id']
+			url = service['url']
+			name = service['name']
+			max = service['max']
+			min = service['min']
+			price = service['price']
+			currency = service['currency']
+			currency_to_usd = service['currency_to_usd']
+			dns = service['dns']
+			average_time = service['average_time']
+			balance = service['balance']
+			self.databaseService.add_service(panel_id, service_id, 
+									url, name, 
+									max, min, price, 
+									currency, currency_to_usd, 
+									dns, average_time, 
+									balance)
+
+
 class ParsingManager(QThread):
 	progress = Signal()
 	complete = Signal(list)
 
-	def __init__(self, panels: list[tuple], panelApiClient, currencyApiClient) -> None:
+	def __init__(self, panels: list[tuple], panelApiClient, currencyApiClient, databaseService: DatabaseService) -> None:
 		super().__init__()
 
 		self.panelsForParsing: list[tuple] = panels
 		self.panelApiClient = panelApiClient
 		self.currencyApiClient = currencyApiClient
-
+		self.databaseService = databaseService
 
 	# main parser func
 	def main(self):
@@ -100,8 +126,9 @@ class ParsingManager(QThread):
 		parser_balance = PanelBalanceParser(self.panelApiClient)
 		currency_parser = CurrencyRatesParser(self.currencyApiClient)
 		rate_usd = currency_parser.parse('USD')
-
 		currency_converter = CurrencyConverter(currency_parser, currency_cache, rate_usd)
+
+		saver_to_database = SaverServices(self.databaseService)
 
 		dns_getter = DnsGetter(dns_cache)
 		try:
@@ -127,9 +154,9 @@ class ParsingManager(QThread):
 								dns_getter=dns_getter, 
 								average_time=average_time) # atime
 							resultInfo.extend(general_result)
+							saver_to_database.save_to_database(panel_id, general_result)
 					finally:
 						self.progress.emit()
-						print('Прогресс парсинга 1')
 					# general_result = parse(
 					# 	url=url, 
 					# 	key=key, 
@@ -141,7 +168,6 @@ class ParsingManager(QThread):
 
 				finally:
 					self.progress.emit()
-					print('Прогресс парсинга 2')
 
 			# returning result (panels info)
 		finally:

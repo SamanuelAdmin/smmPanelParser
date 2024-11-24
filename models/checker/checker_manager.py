@@ -1,10 +1,11 @@
 from PyInstaller.compat import is_win
 
 from models.checker.checker import IPanelPerfomanceChecker
+from models.database_service import DatabaseService
 
 
 class CheckerManager:
-    def __init__(self, databaseService, checker: IPanelPerfomanceChecker):
+    def __init__(self, databaseService: DatabaseService, checker: IPanelPerfomanceChecker):
         self.databaseService = databaseService
         self.checker = checker
 
@@ -18,13 +19,13 @@ class CheckerManager:
                     print(f'[INFO] ключ {key} работает для {url}')
 
                     if not is_work_key: # optimisation of queries (to DB)
-                        self.databaseService.edit_panel(url, key, panel_id, isWorking=is_work, isKeyValid=True)
+                        self.databaseService.edit_panel(id=panel_id, work=is_work, valid_api_key=True)
 
                 elif not check_result:
                     print(f'[INFO] ключ {key} не работает для {url}')
 
                     if is_work_key: # optimisation of queries (to DB)
-                        self.databaseService.edit_panel(url, key, panel_id, isWorking=is_work, isKeyValid=False)
+                        self.databaseService.edit_panel(id=panel_id, work=is_work, valid_api_key=False)
                 else:
                     print(f'[INFO] не удалось проверить {key} для {url}, что-то не так с сайтом')
             finally:
@@ -40,13 +41,13 @@ class CheckerManager:
                     print(f'[INFO] панель {url} работает')
 
                     if not is_working: # optimisation of queries (to DB)
-                        self.databaseService.edit_panel(url, key, panel_id, isWorking=True, isKeyValid=is_work_key)
+                        self.databaseService.edit_panel(id=panel_id, work=True, valid_api_key=is_work_key)
 
                 elif not check_result:
                     print(f'[INFO] панель {url} не работает')
 
                     if is_working: # optimisation of queries (to DB)
-                        self.databaseService.edit_panel(url, key, panel_id, isWorking=False, isKeyValid=is_work_key)
+                        self.databaseService.edit_panel(id=panel_id, work=False, valid_api_key=is_work_key)
 
                 else:
                     print(f'[INFO] что-то не так, не удалось проверить {url}')

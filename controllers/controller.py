@@ -127,7 +127,7 @@ class Controller(QObject):
 			MessageBox('Ошибка', 'Пожалуйста, заполните все поля', type_mes=QMessageBox.Icon.Critical)
 		else:
 			try:
-				self.databaseService.edit_panel(url, key, id)
+				self.databaseService.edit_panel(id, url, key)
 				self.load_panel_table()
 				self.edit_panel_dialog.accept() # close da window
 
@@ -320,7 +320,8 @@ class Controller(QObject):
 		self.parser_panels = ParsingManager(
 			panels,
 			PanelApiClient().setSession( requests.Session() ),
-			CurrencyApiClient( requests.Session() )
+			CurrencyApiClient( requests.Session() ),
+			DatabaseService(database_controller.Database())
 		)
 
 		self.parser_panels.complete.connect(self.save_services)

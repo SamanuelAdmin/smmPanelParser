@@ -20,6 +20,7 @@ def main():
 		Database.connect()
 		Database.cursor()
 		Database.create_table()
+		Database.execute('PRAGMA foreign_keys = ON;') # On support foreign keys
 
 		app = QApplication(sys.argv)
 		view = MainWindow()
