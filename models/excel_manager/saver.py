@@ -8,6 +8,7 @@ from PySide6.QtCore import Signal, QThread
 from xlsxwriter.worksheet import Worksheet
 
 from models.database_service import DatabaseService
+from config import parser_service_columns
 
 class ISaverServices(ABC):
     @abstractmethod
@@ -51,11 +52,9 @@ class ServicesSaver(QThread):
     def __init__(self):
         super().__init__()
         self.row_num = 1
-        self.columns = ['id', 'name', 'url', 'max', 'min', 'price', 'currency', 'currency_to_usd', 'dns', 'average_time', 'balance']
 
         self.services: list[list[dict]] = None
         self.savingPath: str = None
-
 
     def setServices(self, services: list[list[dict]]):
         self.services = services
@@ -80,7 +79,8 @@ class ServicesSaver(QThread):
             worksheet = workbook.add_worksheet()
             col_num = 0
 
-            for column in self.columns:
+            for column in parser_service_columns:
+                print(column)
                 worksheet.write(0, col_num, column)
                 col_num += 1
 

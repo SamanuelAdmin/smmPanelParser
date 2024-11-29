@@ -14,11 +14,13 @@ from models.database_controller import Database
 
 def add_usd_amount(currency_converter: ICurrencyConverter, currency_code: str, amount: float, service: dict):
 	converted_currency = currency_converter.convert(currency_code, amount)
-	service['currency_to_usd'] = converted_currency
+	if converted_currency:
+		service['currency_to_usd'] = float(converted_currency)
 
 def balance_add_to_json(parsed_services: list[dict], balance):
 	for service in parsed_services:
-		service['balance'] = balance
+		if balance: service['balance'] = float(balance)
+		else: service['balance'] = 'не смог получить'
 	return parsed_services
 
 def usd_add_to_json(currency_converter: ICurrencyConverter, parsed_services: list[dict]):
@@ -27,9 +29,9 @@ def usd_add_to_json(currency_converter: ICurrencyConverter, parsed_services: lis
 
 	return parsed_services
 
-def atime_add_to_json(parsed_services: list[dict], average_time: dict):
+def atime_add_to_json(parsed_services: list[dict], average_time: dict | None):
 	for service in parsed_services:
-		if int(service['id']) in average_time: service['average_time'] = average_time[int(service['id'])]
+		if int(service['service_id']) in average_time: service['average_time'] = average_time[int(service['service_id'])]
 		else: service['average_time'] = ''
 
 	return parsed_services
@@ -73,47 +75,22 @@ def parse(
 	services = currency_add_to_json(services, currency_code_panel)
 	services = usd_add_to_json(currency_converter, services)
 	services = dns_add_to_json(services, dns_getter)
-	services = balance_add_to_json(services, balance)
+	
+	if balance:
+		services = balance_add_to_json(services, balance)
 
 	return services
-
-
-class SaverServices:
-	def __init__(self, databaseService: DatabaseService):
-		self.databaseService = databaseService
-
-	def save_to_database(self, panel_id: int, parsed_services: list[dict]):
-		for service in parsed_services:
-			service_id = service['id']
-			url = service['url']
-			name = service['name']
-			max = service['max']
-			min = service['min']
-			price = service['price']
-			currency = service['currency']
-			currency_to_usd = service['currency_to_usd']
-			dns = service['dns']
-			average_time = service['average_time']
-			balance = service['balance']
-			self.databaseService.add_service(panel_id, service_id, 
-									url, name, 
-									max, min, price, 
-									currency, currency_to_usd, 
-									dns, average_time, 
-									balance)
-
 
 class ParsingManager(QThread):
 	progress = Signal()
 	complete = Signal(list)
 
-	def __init__(self, panels: list[tuple], panelApiClient, currencyApiClient, databaseService: DatabaseService) -> None:
+	def __init__(self, panels: list[tuple], panelApiClient, currencyApiClient) -> None:
 		super().__init__()
 
 		self.panelsForParsing: list[tuple] = panels
 		self.panelApiClient = panelApiClient
 		self.currencyApiClient = currencyApiClient
-		self.databaseService = databaseService
 
 	# main parser func
 	def main(self):
@@ -128,7 +105,7 @@ class ParsingManager(QThread):
 		rate_usd = currency_parser.parse('USD')
 		currency_converter = CurrencyConverter(currency_parser, currency_cache, rate_usd)
 
-		saver_to_database = SaverServices(self.databaseService)
+		# saver_to_database = SaverServices(self.databaseService)
 
 		dns_getter = DnsGetter(dns_cache)
 		try:
@@ -139,10 +116,10 @@ class ParsingManager(QThread):
 					if not url or not key: continue
 
 					try:
-						atime_parser = AverageTimeParser(self.panelApiClient)
-						average_time_res = atime_parser.parse(url)
-						if average_time_res:
-							average_time: dict[int, str] | None = average_time_res.parsingResult
+						# atime_parser = AverageTimeParser(self.panelApiClient)
+						# average_time_res = atime_parser.parse(url)
+						# if average_time_res:
+							# average_time: dict[int, str] | None = average_time_res.parsingResult
 
 							general_result = parse(
 								url=url, 
@@ -151,10 +128,9 @@ class ParsingManager(QThread):
 								parser_services=parser_services, 
 								parser_balance=parser_balance, 
 								currency_converter=currency_converter, 
-								dns_getter=dns_getter, 
-								average_time=average_time) # atime
+								dns_getter=dns_getter) # atime
 							resultInfo.extend(general_result)
-							saver_to_database.save_to_database(panel_id, general_result)
+							# saver_to_database.save_to_database(panel_id, general_result)
 					finally:
 						self.progress.emit()
 					# general_result = parse(

@@ -18,9 +18,13 @@ from models.excel_manager.saver import ServicesSpliter, ServicesSaver
 # parsing logic
 from models.parser.parsing_manager import ParsingManager
 
+# saver
+from models.services_saver.services_saver_manager import ServicesSaverManager
+
 # import all exceptions
 from utils.exceptions.database_exceptions import *
 from utils.loggerbuffer import LoggerBuffer
+
 
 # import all views
 from views.main_view import MainWindow
@@ -69,7 +73,7 @@ class Controller(QObject):
 		self.view.btn_import.clicked.connect(self.import_excel_to_panels)
 		self.view.btn_export.clicked.connect(self.open_export_excel_dialog)
 		self.view.btn_check.clicked.connect(self.check_panels)
-		self.view.btn_parse.clicked.connect(self.ui_save_excel)
+		self.view.btn_parse.clicked.connect(self.start_parse)
 
 		self.view.btn_viewlog.clicked.connect(self.showEventLog)
 
@@ -308,7 +312,7 @@ class Controller(QObject):
 		self.save_excel_for_parse_dialog.exec()
 
 	def start_parse(self):
-		self.save_excel_for_parse_dialog.close()
+		# self.save_excel_for_parse_dialog.close()
 
 		# getting all panels
 		panels = self.databaseService.get_panels(filterFunc=lambda panel: panel[3]) # choice only working
@@ -320,16 +324,24 @@ class Controller(QObject):
 		self.parser_panels = ParsingManager(
 			panels,
 			PanelApiClient().setSession( requests.Session() ),
-			CurrencyApiClient( requests.Session() ),
-			DatabaseService(database_controller.Database())
+			CurrencyApiClient( requests.Session() )
 		)
 
-		self.parser_panels.complete.connect(self.save_services)
+		self.parser_panels.complete.connect(self.save_services_to_database)
 		self.view.progress_bar.setValue(0)
 		self.view.progress_bar.setMaximum(len(panels) * 2)
 		self.parser_panels.progress.connect(self.view.update_progress)
 
 		self.parser_panels.start()
+
+	@Slot(list)
+	def save_services_to_database(self, services):
+		print(f'Database services save in controller')
+		self.serviceSaverManager = ServicesSaverManager(DatabaseService(database_controller.Database()))
+		self.serviceSaverManager.on_complite.connect(self.parsing_complete)
+		self.serviceSaverManager.setServices(services)
+		self.serviceSaverManager.start()
+
 
 	@Slot(list)
 	def save_services(self, services):

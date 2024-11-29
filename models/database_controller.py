@@ -40,8 +40,6 @@ class PanelsDatabaseConfig:
 	get_panels_by_worked_keys_sites = '''SELECT * FROM panels WHERE valid_api_key=?'''
 
 class ServicesDatabaseConfig:
-	columns = ['service_id', 'url', 'name', 'max', 'min', 'price', 'currency', 'currency_to_usd', 'dns', 'average_time', 'balance', 'panel_id']
-
 	create_table = '''CREATE TABLE IF NOT EXISTS services (
 					id INTEGER PRIMARY KEY AUTOINCREMENT,
 					service_id INTEGER NOT NULL,
@@ -54,10 +52,28 @@ class ServicesDatabaseConfig:
 					currency_to_usd REAL DEFAULT 0,
 					dns TEXT NOT NULL,
 					average_time TEXT DEFAULT "no average",
-					balance REAL DEFAULT 0,
-					panel_id INTEGER,
-					FOREIGN KEY(panel_id) REFERENCES panels(id) ON DELETE CASCADE ON UPDATE CASCADE)'''
-	add_service = f'''INSERT INTO services ({", ".join([column for column in columns])}) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)'''
+					balance REAL DEFAULT "не смог получить")'''
+	
+	get_services = '''SELECT * FROM services'''
+
+	@staticmethod
+	def generate_query_by_data(data: dict, query_type: str = 'insert'):
+		'''
+		:param data: Dict
+		:param query_data: "insert" / "select" / "select_by"
+		'''
+		if query_type == 'insert':
+			columns = ', '.join(data.keys())
+			placeholders = ', '.join([f":{key}" for key in data.keys()])
+			return f'INSERT INTO services ({columns}) VALUES ({placeholders})'
+		elif query_type == 'select_by':
+			where_clause = " AND ".join([f"{key} = :{key}" for key in data.keys()])
+			
+			return f'SELECT * FROM services WHERE {where_clause}'
+		
+	get_service_by = 'SELECT * FROM services WHERE {column}={value}'
+
+	# add_service = f'''INSERT INTO services ({", ".join([column for column in columns])}) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)'''
 	# add_service = f'''
 	# INSERT INTO services ({', '.join([column for column in columns])}) 
 	# VALUES ({[', '.join(['?' for _ in columns])]})'''
@@ -124,17 +140,21 @@ class Database(metaclass=SingletonMeta):
 		except Exception as err:
 			raise err
 		
-	def add_service(self, 
-				panel_id: int, service_id: int, 
-				url: str, name: str,
-				max: int, min: int,
-				price: float, currency: str,
-				currency_to_usd: float, dns: str,
-				average_time: str, balance: str) -> None:
+	def add_service(self, data: dict) -> None:
 		try:
-			Database.execute(ServicesDatabaseConfig.add_service, (service_id, url, name, max, min, price, currency, currency_to_usd, dns, average_time, balance, panel_id, ))
+			Database.execute(ServicesDatabaseConfig.generate_query_by_data(data, 'insert'), data)
 		except Exception as err:
 			raise err
+		
+	def get_service_by(self, **kwargs):
+		try:
+			return Database.execute(ServicesDatabaseConfig.generate_query_by_data(kwargs, 'select_by'), kwargs)
+		except Exception as err:
+			raise err
+	# def edit_service(self, data: dict) -> None:
+	# 	try:
+	# 	except Exception as err:
+
 		
 	def edit_panel(self, id: int, url: str=None, api_key: str=None, work: bool=None, valid_api_key: bool=None) -> None:
 		try:
