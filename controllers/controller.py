@@ -171,7 +171,7 @@ class Controller(QObject):
 			file_types = ['*.xlsx, *.XLSX', '*.csv, *.CSV']
 		)
 
-		if file_dialog.exec() == QFileDialog.Accepted:
+		if file_dialog.exec_data == QFileDialog.Accepted:
 			for path in file_dialog.selectedFiles():
 				try: 
 					rows = ExcelController.load_excel_file(path)

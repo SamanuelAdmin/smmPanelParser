@@ -130,6 +130,12 @@ class MainWindow(QMainWindow):
 
 		self.verticalLayout_3.addWidget(self.checkBox_check_keys)
 
+		# self.checkBox_saveresult_keys = QRadioButton(self.groupBox)
+		# self.checkBox_saveresult_keys.setObjectName(u"is_saving_result")
+		# self.checkBox_saveresult_keys.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+
+		# self.verticalLayout_3.addWidget(self.checkBox_saveresult_keys)
+
 		self.btn_check = QPushButton(self.groupBox)
 		self.btn_check.setObjectName(u"btn_check")
 		self.btn_check.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
