@@ -1,8 +1,9 @@
 from PySide6.QtCore import (QCoreApplication, QMetaObject, QSize, Qt)
 from PySide6.QtGui import (QCursor,QFont, QFontDatabase)
-from PySide6.QtWidgets import (QMainWindow, QFrame, QGridLayout, QGroupBox, 
-							QLayout, QPushButton, QSizePolicy, QTableView, 
-							QVBoxLayout, QWidget, QLabel, QLineEdit, QAbstractItemView, QRadioButton, QHeaderView, QProgressBar)
+from PySide6.QtWidgets import (QMainWindow, QFrame, QGridLayout, QGroupBox,
+							   QLayout, QPushButton, QSizePolicy, QTableView,
+							   QVBoxLayout, QWidget, QLabel, QLineEdit, QAbstractItemView, QRadioButton, QHeaderView,
+							   QProgressBar, QCheckBox)
 
 
 class MainWindow(QMainWindow):
@@ -130,11 +131,11 @@ class MainWindow(QMainWindow):
 
 		self.verticalLayout_3.addWidget(self.checkBox_check_keys)
 
-		# self.checkBox_saveresult_keys = QRadioButton(self.groupBox)
-		# self.checkBox_saveresult_keys.setObjectName(u"is_saving_result")
-		# self.checkBox_saveresult_keys.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+		self.checkBox_saveresult_keys = QCheckBox('Сохранить результат проверки в excel', self.groupBox)
+		self.checkBox_saveresult_keys.setObjectName(u"is_saving_result")
+		self.checkBox_saveresult_keys.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
-		# self.verticalLayout_3.addWidget(self.checkBox_saveresult_keys)
+		self.verticalLayout_3.addWidget(self.checkBox_saveresult_keys)
 
 		self.btn_check = QPushButton(self.groupBox)
 		self.btn_check.setObjectName(u"btn_check")

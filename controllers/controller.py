@@ -1,8 +1,11 @@
+import os
 import threading
+from fileinput import filename
 
 import requests
 from PySide6.QtCore import QObject, Slot
 from PySide6.QtWidgets import QMessageBox, QFileDialog
+from datetime import datetime
 
 # database import
 from models import database_controller
@@ -10,6 +13,7 @@ from models.api_manager.api_client import PanelApiClient, CurrencyApiClient
 from models.checker.runner import CheckerRunner
 # database logic
 from models.database_service import DatabaseService
+from models.excel_manager.check_result_saver import CheckResultSaver
 
 # excel logic
 from models.excel_manager.excel_controller import ExcelController
@@ -250,8 +254,26 @@ class Controller(QObject):
 	@panels_table_update
 	def on_check_completed(self):
 		self.load_panel_table()
-		MessageBox(title='Успех', text='Успешно завершил проверку!', type_mes=QMessageBox.Icon.Information)
-		self.view.progress_bar.setValue(0)
+
+		if self.checkResultSaver:
+			file_dialog = choice_file_view.FileDialog(
+				'Выберите дерикторию для сохранения результатов проверки',
+				file_mode=QFileDialog.Directory
+			)
+
+			if file_dialog.exec_data == QFileDialog.Accepted:
+				filename = f'check_result_{str(datetime.now())[:-7]}.xlsx' \
+					.replace(':', '_') \
+					.replace(' ', '_')
+
+				if self.checkResultSaver.save(
+					# path to file + filename
+					f'{file_dialog.selectedFiles()[0]}/{filename}'
+				):
+					MessageBox(title='Успех', text=f'Результаты проверки сохранены в файл {filename}', type_mes=QMessageBox.Icon.Information)
+		else:
+			MessageBox(title='Успех', text='Успешно завершил проверку!', type_mes=QMessageBox.Icon.Information)
+			self.view.progress_bar.setValue(0)
 
 	def check_panels(self):
 		selected_rows = self.view.tableView.selectionModel().selectedRows(column=0)  # забираем id записей
@@ -267,11 +289,17 @@ class Controller(QObject):
 				) for panel_id in selected_rows
 		] # getting all panels from database via those id`s
 
+		self.checkResultSaver = CheckResultSaver() \
+			if self.view.checkBox_saveresult_keys.isChecked() \
+			else None # if you need to save a checking result
+
+
 		self.checkerRunner = CheckerRunner(
 			DatabaseService(database_controller.Database()),
 			PanelApiClient().setSession(
 				requests.Session()
-			)
+			),
+			checkResultSaver=self.checkResultSaver
 		)
 
 		if self.view.checkBox_check_keys.isChecked():
