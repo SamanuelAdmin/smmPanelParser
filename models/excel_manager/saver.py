@@ -80,7 +80,6 @@ class ServicesSaver(QThread):
             col_num = 0
 
             for column in parser_service_columns:
-                print(column)
                 worksheet.write(0, col_num, column)
                 col_num += 1
 
@@ -92,19 +91,17 @@ class ServicesSaver(QThread):
             self.services.remove(service_list)
 
             print(f'[+] SAVE {full_path}')
-            self.on_save.emit()
 
     def _write_service(self, service: dict, worksheet: Worksheet) -> None:
-        for col_num, column in zip(range(0, len(self.columns) + 1), self.columns):
+        for col_num, column in zip(range(0, len(parser_service_columns) + 1), parser_service_columns):
             try:
                 worksheet.write(self.row_num, col_num, service[column])
             except KeyError:
                 continue
-
+            finally:
+                self.on_save.emit()
         self.row_num += 1
 
     def run(self):
-        try:
-            self.save()
-        finally:
-            self.complete.emit()
+        try: self.save()
+        finally: self.complete.emit()

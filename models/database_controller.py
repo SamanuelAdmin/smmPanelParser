@@ -153,7 +153,7 @@ class Database(metaclass=SingletonMeta):
 		except Exception as err:
 			raise err
 		
-	def get_services(self):
+	def get_services(self) -> list[dict]:
 		try:
 			return Database.execute(ServicesDatabaseConfig.get_services, is_row_factory=True)
 		except Exception as err:

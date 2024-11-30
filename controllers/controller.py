@@ -77,6 +77,8 @@ class Controller(QObject):
 
 		self.view.btn_viewlog.clicked.connect(self.showEventLog)
 
+		self.view.btn_export_services.clicked.connect(self.ui_save_excel)
+
 	# ================== ADD PANEL ==================
 	def showEventLog(self):
 		self.logsWindow = event_log_view.LogWindow(self.loggerBuffer)
@@ -308,11 +310,10 @@ class Controller(QObject):
 	def ui_save_excel(self):
 		self.save_excel_for_parse_dialog = save_excel_view.SaveExcelDialog()
 		self.save_excel_for_parse_dialog.set_dir_btn.clicked.connect(self.save_file_for_parse_dialog)
-		self.save_excel_for_parse_dialog.start.clicked.connect(self.start_parse)
+		self.save_excel_for_parse_dialog.start.clicked.connect(self.save_services)
 		self.save_excel_for_parse_dialog.exec()
 
 	def start_parse(self):
-		# self.save_excel_for_parse_dialog.close()
 
 		# getting all panels
 		try:
@@ -357,13 +358,14 @@ class Controller(QObject):
 		self.serviceSaverManager.setServices(services)
 		self.serviceSaverManager.start()
 
-	@Slot(list)
-	def save_services(self, services):
-		self.view.progress_bar.setValue(0) # clear progress bar
+	def save_services(self):
+		self.save_excel_for_parse_dialog.close()
+
+		services = self.databaseService.get_services()
 
 		try: assert len(services) > 0
 		except AssertionError: 
-			MessageBox(title='Ошибка', text='Нечего сохранять', type_mes=QMessageBox.Icon.Critical)
+			MessageBox(title='Ошибка', text='Нечего выгружать', type_mes=QMessageBox.Icon.Critical)
 			self.parsing_complete()
 			return
 
@@ -375,9 +377,10 @@ class Controller(QObject):
 				.setServices(splitedServices) \
 				.setSavingPath(self.save_excel_for_parse_dialog.export_path)
 
+		self.view.progress_bar.setMaximum(len(services))
+		self.view.progress_bar.setFormat("Сохранил: %p% (%v из %m)")
 		saver.on_save.connect(self.view.update_progress)
-		self.view.progress_bar.setMaximum(len(splitedServices))
-		saver.complete.connect(self.parsing_complete)
+		saver.complete.connect(self.saver_complete)
 		saver.start()
 
 		# fixing the "QThread error" (when thread already has been closed after saver start). This line allow to new thread work
@@ -388,6 +391,16 @@ class Controller(QObject):
 		self.view.progress_bar.setFormat("%p%")
 		MessageBox(
 			title='Успех', text='Успешно завершил парсинг!',
+			type_mes=QMessageBox.Icon.Information
+		)
+
+		self.view.progress_bar.setValue(0)
+
+	def saver_complete(self):
+		print('[INFO] Сохранение завершено успешно.')
+		self.view.progress_bar.setFormat("%p%")
+		MessageBox(
+			title='Успех', text='Успешно завершил сохранение!',
 			type_mes=QMessageBox.Icon.Information
 		)
 

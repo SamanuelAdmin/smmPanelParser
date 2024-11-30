@@ -23,6 +23,9 @@ class DatabaseService:
     def get_panels(self) -> list: # read
         return self.databaseController.get_panels()
     
+    def get_services(self) -> list[dict]:
+        return self.databaseController.get_services()
+    
     def get_service_by(self, data: dict) -> None:
         return self.databaseController.get_service_by(data)
 

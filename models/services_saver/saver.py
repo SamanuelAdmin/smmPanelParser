@@ -4,13 +4,13 @@ class Saver:
 	def __init__(self, databaseServices: DatabaseService):
 		self.databaseServices = databaseServices
 
-	def __add_service(self, service: dict):
+	def __add_service(self, service: dict) -> None:
 		print()
 		self.databaseServices.add_service(service)
 		print(f'Добавил сервис {service["service_id"]}({service["name"]})')
 		print()
 
-	def __update_service(self, new_service: dict, old_service: dict):
+	def __update_service(self, new_service: dict, old_service: dict) -> None:
 		print()
 		print(f'Сервис {old_service["service_id"]}:')
 		for key, value in new_service.items():
