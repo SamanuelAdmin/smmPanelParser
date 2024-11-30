@@ -1,7 +1,7 @@
 from PySide6.QtCore import QThread, Signal
 import requests
 
-from models.parser.average_time_parser import AverageTimeParser
+# from models.parser.average_time_parser import AverageTimeParser
 from models.parser.currency_converter import CurrencyConverter, ICurrencyConverter
 from models.parser.dns import DnsGetter, IDnsGetter
 from models.parser.parser_currency import CurrencyRatesParser
@@ -19,8 +19,7 @@ def add_usd_amount(currency_converter: ICurrencyConverter, currency_code: str, a
 
 def balance_add_to_json(parsed_services: list[dict], balance):
 	for service in parsed_services:
-		if balance: service['balance'] = float(balance)
-		else: service['balance'] = 'не смог получить'
+		service['balance'] = balance
 	return parsed_services
 
 def usd_add_to_json(currency_converter: ICurrencyConverter, parsed_services: list[dict]):
@@ -76,8 +75,8 @@ def parse(
 	services = usd_add_to_json(currency_converter, services)
 	services = dns_add_to_json(services, dns_getter)
 	
-	if balance:
-		services = balance_add_to_json(services, balance)
+	if balance is not None and isinstance(balance, float): services = balance_add_to_json(services, balance)
+	else: services = balance_add_to_json(services, 'не смог получить')
 
 	return services
 

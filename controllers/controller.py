@@ -315,11 +315,19 @@ class Controller(QObject):
 		# self.save_excel_for_parse_dialog.close()
 
 		# getting all panels
-		panels = self.databaseService.get_panels(filterFunc=lambda panel: panel[3]) # choice only working
-		try: assert len(panels) > 0
-		except AssertionError: 
-			MessageBox(title='Ошибка', text='Нечего парсить, так как все панели нерабочие или с нерабочим ключом', type_mes=QMessageBox.Icon.Critical)
+		try:
+			panels = self.databaseService.get_panels()
+			print(panels)
+			panels = sorted(panels, key=lambda x: x[3])
+		
+			try: assert len(panels) > 0
+			except AssertionError: 
+				MessageBox(title='Ошибка', text='Нечего парсить, так как все панели нерабочие или с нерабочим ключом', type_mes=QMessageBox.Icon.Critical)
+				return
+		except Exception as err:
+			MessageBox(title='Ошибка', text=f'Возникла непредвиденная ошибка при получении рабочих панелей, при запуске парсинга:\n{err}', type_mes=QMessageBox.Icon.Critical)
 			return
+
 
 		self.parser_panels = ParsingManager(
 			panels,
@@ -329,19 +337,25 @@ class Controller(QObject):
 
 		self.parser_panels.complete.connect(self.save_services_to_database)
 		self.view.progress_bar.setValue(0)
-		self.view.progress_bar.setMaximum(len(panels) * 2)
+		self.view.progress_bar.setMaximum(len(panels))
 		self.parser_panels.progress.connect(self.view.update_progress)
+		self.view.progress_bar.setFormat("Спарсил: %p% (%v из %m)")
 
 		self.parser_panels.start()
 
 	@Slot(list)
 	def save_services_to_database(self, services):
-		print(f'Database services save in controller')
+		self.view.progress_bar.setValue(0)
+		self.view.progress_bar.setMaximum(len(services))
+
+		print('Parsed serivce:', services[0])
+
 		self.serviceSaverManager = ServicesSaverManager(DatabaseService(database_controller.Database()))
+		self.serviceSaverManager.progress.connect(self.view.update_progress)
+		self.view.progress_bar.setFormat("Сохранил: %p% (%v из %m)")
 		self.serviceSaverManager.on_complite.connect(self.parsing_complete)
 		self.serviceSaverManager.setServices(services)
 		self.serviceSaverManager.start()
-
 
 	@Slot(list)
 	def save_services(self, services):
@@ -371,7 +385,7 @@ class Controller(QObject):
 
 	def parsing_complete(self):
 		print('[INFO] Парсинг завершен успешно.')
-
+		self.view.progress_bar.setFormat("%p%")
 		MessageBox(
 			title='Успех', text='Успешно завершил парсинг!',
 			type_mes=QMessageBox.Icon.Information

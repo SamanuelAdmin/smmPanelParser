@@ -166,6 +166,7 @@ class MainWindow(QMainWindow):
 		self.verticalLayout_4.addWidget(self.btn_parse)
 
 		self.progress_bar = QProgressBar()
+		self.progress_bar.setTextVisible(True)
 		self.verticalLayout_4.addWidget(self.progress_bar)
 
 		self.setCentralWidget(self.centralwidget)

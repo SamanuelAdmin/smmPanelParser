@@ -7,6 +7,7 @@ from models.services_saver.saver import Saver
 
 class ServicesSaverManager(QThread):
 	on_complite = Signal()
+	progress = Signal()
 
 	def __init__(self, databaseServices: DatabaseService):
 		super().__init__()
@@ -20,6 +21,7 @@ class ServicesSaverManager(QThread):
 	def run(self):
 		try:
 			saver = Saver(self.databaseServices)
-			saver.save(self.services)
+			for _ in saver.save(self.services):
+				self.progress.emit()
 		finally:
 			self.on_complite.emit()

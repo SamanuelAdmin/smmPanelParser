@@ -40,6 +40,22 @@ class PanelsDatabaseConfig:
 	get_panels_by_worked_keys_sites = '''SELECT * FROM panels WHERE valid_api_key=?'''
 
 class ServicesDatabaseConfig:
+	@staticmethod
+	def query_insert(data: dict) -> str:
+		columns = ', '.join(data.keys())
+		placeholders = ', '.join([f":{key}" for key in data.keys()])
+		return f'INSERT INTO services ({columns}) VALUES ({placeholders})'
+	
+	@staticmethod
+	def query_edit(data: dict) -> str:
+		columns = ', '.join([f'{key} = :{key}' for key in data if key != 'id'])  # Игнорируем ключ `id`
+		return f'UPDATE services SET {columns} WHERE id = :id'
+	
+	@staticmethod
+	def query_select_by(data: dict) -> str:
+		where_clause = " AND ".join([f"{key} = :{key}" for key in data.keys()])
+		return f'SELECT * FROM services WHERE {where_clause}'
+	
 	create_table = '''CREATE TABLE IF NOT EXISTS services (
 					id INTEGER PRIMARY KEY AUTOINCREMENT,
 					service_id INTEGER NOT NULL,
@@ -55,28 +71,6 @@ class ServicesDatabaseConfig:
 					balance REAL DEFAULT "не смог получить")'''
 	
 	get_services = '''SELECT * FROM services'''
-
-	@staticmethod
-	def generate_query_by_data(data: dict, query_type: str = 'insert'):
-		'''
-		:param data: Dict
-		:param query_data: "insert" / "select" / "select_by"
-		'''
-		if query_type == 'insert':
-			columns = ', '.join(data.keys())
-			placeholders = ', '.join([f":{key}" for key in data.keys()])
-			return f'INSERT INTO services ({columns}) VALUES ({placeholders})'
-		elif query_type == 'select_by':
-			where_clause = " AND ".join([f"{key} = :{key}" for key in data.keys()])
-			
-			return f'SELECT * FROM services WHERE {where_clause}'
-		
-	get_service_by = 'SELECT * FROM services WHERE {column}={value}'
-
-	# add_service = f'''INSERT INTO services ({", ".join([column for column in columns])}) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)'''
-	# add_service = f'''
-	# INSERT INTO services ({', '.join([column for column in columns])}) 
-	# VALUES ({[', '.join(['?' for _ in columns])]})'''
 
 	edit_service = '''
 	UPDATE services SET {params} 
@@ -116,21 +110,66 @@ class Database(metaclass=SingletonMeta):
 			cls.__connection = cls.__connection.close()
 			print(f'Закрыл connection, теперь {cls.__connection=}')
 	
+	@staticmethod
+	def dict_factory(cursor: sqlite3.Cursor, row):
+		return {col[0]: row[idx] for idx, col in enumerate(cursor.description)}
+	
 	@classmethod
-	def execute(cls, *args) -> list | None:
+	def execute(cls, *args, is_row_factory = False) -> list | None:
 		if cls.__connection is not None and cls.__cursor is not None:
 			res = cls.__cursor.execute(*args)
+
 			for key in ['CREATE', 'INSERT', 'UPDATE', 'DELETE']:
 				if key in args[0]:
 					cls.__connection.commit()
 			if 'SELECT' in args[0]:
-				return res.fetchall()
+				if is_row_factory:
+					# Для получения результата в виде list[dict], а не list[tuple]
+					cls.__cursor.row_factory = cls.dict_factory
+				return_data = res.fetchall()
+				cls.__cursor.row_factory = None
+				return return_data
 			
 	@classmethod
 	def create_table(cls) -> None:
 		cls.execute(PanelsDatabaseConfig.create_table)
 		cls.execute(ServicesDatabaseConfig.create_table)
 
+
+	#######################################################################
+	###########################              ##############################
+	######################  working with services  ########################
+	###########################              ##############################
+	#######################################################################
+	def add_service(self, data: dict) -> None:
+		try:
+			Database.execute(ServicesDatabaseConfig.query_insert(data), data)
+		except Exception as err:
+			raise err
+		
+	def get_service_by(self, data: dict):
+		try:
+			return Database.execute(ServicesDatabaseConfig.query_select_by(data), data, is_row_factory=True)
+		except Exception as err:
+			raise err
+		
+	def get_services(self):
+		try:
+			return Database.execute(ServicesDatabaseConfig.get_services, is_row_factory=True)
+		except Exception as err:
+			raise err
+		
+	def edit_service(self, data: dict):
+		try:
+			Database.execute(ServicesDatabaseConfig.query_edit(data), data)
+		except Exception as err:
+			raise err
+	
+	#######################################################################
+	###########################              ##############################
+	######################    working with panels    ######################
+	###########################              ##############################
+	#######################################################################
 	def add_panel(self, url: str, api_key: str) -> None:
 		try:
 			Database.execute(
@@ -139,22 +178,6 @@ class Database(metaclass=SingletonMeta):
 			)
 		except Exception as err:
 			raise err
-		
-	def add_service(self, data: dict) -> None:
-		try:
-			Database.execute(ServicesDatabaseConfig.generate_query_by_data(data, 'insert'), data)
-		except Exception as err:
-			raise err
-		
-	def get_service_by(self, **kwargs):
-		try:
-			return Database.execute(ServicesDatabaseConfig.generate_query_by_data(kwargs, 'select_by'), kwargs)
-		except Exception as err:
-			raise err
-	# def edit_service(self, data: dict) -> None:
-	# 	try:
-	# 	except Exception as err:
-
 		
 	def edit_panel(self, id: int, url: str=None, api_key: str=None, work: bool=None, valid_api_key: bool=None) -> None:
 		try:

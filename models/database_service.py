@@ -13,18 +13,18 @@ class DatabaseService:
 
     def add_service(self, data: dict):
         self.databaseController.add_service(data)
+    
+    def edit_service(self, data: dict):
+        self.databaseController.edit_service(data)
 
     def edit_panel(self, id: int, url: str=None, api_key: str=None, work: bool=None, valid_api_key: bool=None) -> None: # update
         self.databaseController.edit_panel(id, url, api_key, work, valid_api_key)
 
-    def get_panels(self, filterFunc: Callable=None): # read
-        if filter is not None:
-            return list(filter(filterFunc, self.databaseController.get_panels()))
-
+    def get_panels(self) -> list: # read
         return self.databaseController.get_panels()
     
-    def get_service_by(self, **kwargs) -> None:
-        return self.databaseController.get_service_by(**kwargs)
+    def get_service_by(self, data: dict) -> None:
+        return self.databaseController.get_service_by(data)
 
     def get_panels_by(self, panel_id: int=None, work=False, worked_keys_sites=False):
         if panel_id != None: return self.databaseController.get_panel_by_id(panel_id)[0] # returning tuple
