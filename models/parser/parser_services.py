@@ -3,7 +3,7 @@ from abc import abstractmethod, ABC
 
 class IPanelServicesParser(ABC):
 	@abstractmethod
-	async def parse(self, url: str, key: str) -> list[dict] | None:
+	def parse(self, url: str, key: str) -> list[dict] | None:
 		pass
 
 
@@ -26,12 +26,12 @@ class PanelServicesParser(IPanelServicesParser):
 				price_ser = service['rate']
 				parsed_data.append(
 					{
-						'id': id_ser,
-						'name': name_ser,
+						'service_id': int(id_ser),
 						'url': url,
-						'max': max_ser,
-						'min': min_ser,
-						'price': price_ser,
+						'name': name_ser,
+						'max': int(max_ser),
+						'min': int(min_ser),
+						'price': float(price_ser),
 					}
 				)
 			except KeyError:

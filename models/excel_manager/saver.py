@@ -1,12 +1,14 @@
 from abc import ABC, abstractmethod
 
 import os
-from idlelib.window import add_windows_to_menu
 
 import xlsxwriter
+
 from PySide6.QtCore import Signal, QThread
 from xlsxwriter.worksheet import Worksheet
 
+from models.database_service import DatabaseService
+from config import parser_service_columns
 
 class ISaverServices(ABC):
     @abstractmethod
@@ -50,7 +52,6 @@ class ServicesSaver(QThread):
     def __init__(self):
         super().__init__()
         self.row_num = 1
-        self.columns = ['id', 'name', 'url', 'max', 'min', 'price', 'currency', 'currency_to_usd', 'dns', 'average_time', 'balance']
 
         self.services: list[list[dict]] = None
         self.savingPath: str = None
@@ -62,7 +63,7 @@ class ServicesSaver(QThread):
     def setSavingPath(self, path: str):
         self.savingPath = path
         return self
-
+    
     def save(self) -> None:
         file_c = 0
 
@@ -78,7 +79,7 @@ class ServicesSaver(QThread):
             worksheet = workbook.add_worksheet()
             col_num = 0
 
-            for column in self.columns:
+            for column in parser_service_columns:
                 worksheet.write(0, col_num, column)
                 col_num += 1
 
@@ -90,19 +91,17 @@ class ServicesSaver(QThread):
             self.services.remove(service_list)
 
             print(f'[+] SAVE {full_path}')
-            self.on_save.emit()
 
     def _write_service(self, service: dict, worksheet: Worksheet) -> None:
-        for col_num, column in zip(range(0, len(self.columns) + 1), self.columns):
+        for col_num, column in zip(range(0, len(parser_service_columns) + 1), parser_service_columns):
             try:
                 worksheet.write(self.row_num, col_num, service[column])
             except KeyError:
                 continue
-
+            finally:
+                self.on_save.emit()
         self.row_num += 1
 
     def run(self):
-        try:
-            self.save()
-        finally:
-            self.complete.emit()
+        try: self.save()
+        finally: self.complete.emit()

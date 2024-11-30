@@ -1,19 +1,21 @@
 from PySide6.QtCore import QThread, Signal
 import requests
 
-from models.parser.average_time_parser import AverageTimeParser
+# from models.parser.average_time_parser import AverageTimeParser
 from models.parser.currency_converter import CurrencyConverter, ICurrencyConverter
 from models.parser.dns import DnsGetter, IDnsGetter
 from models.parser.parser_currency import CurrencyRatesParser
 from models.parser.parser_panel_currency import PanelCurrencyParser, IPanelCurrencyParser
 from models.parser.parser_services import PanelServicesParser, IPanelServicesParser
 from models.parser.parser_balance import PanelBalanceParser, IPanelBalanceParser
-
+from models.database_service import DatabaseService
+from models.database_controller import Database
 
 
 def add_usd_amount(currency_converter: ICurrencyConverter, currency_code: str, amount: float, service: dict):
 	converted_currency = currency_converter.convert(currency_code, amount)
-	service['currency_to_usd'] = converted_currency
+	if converted_currency:
+		service['currency_to_usd'] = float(converted_currency)
 
 def balance_add_to_json(parsed_services: list[dict], balance):
 	for service in parsed_services:
@@ -26,9 +28,9 @@ def usd_add_to_json(currency_converter: ICurrencyConverter, parsed_services: lis
 
 	return parsed_services
 
-def atime_add_to_json(parsed_services: list[dict], average_time: dict):
+def atime_add_to_json(parsed_services: list[dict], average_time: dict | None):
 	for service in parsed_services:
-		if int(service['id']) in average_time: service['average_time'] = average_time[int(service['id'])]
+		if int(service['service_id']) in average_time: service['average_time'] = average_time[int(service['service_id'])]
 		else: service['average_time'] = ''
 
 	return parsed_services
@@ -72,10 +74,11 @@ def parse(
 	services = currency_add_to_json(services, currency_code_panel)
 	services = usd_add_to_json(currency_converter, services)
 	services = dns_add_to_json(services, dns_getter)
-	services = balance_add_to_json(services, balance)
+	
+	if balance is not None and isinstance(balance, float): services = balance_add_to_json(services, balance)
+	else: services = balance_add_to_json(services, 'не смог получить')
 
 	return services
-
 
 class ParsingManager(QThread):
 	progress = Signal()
@@ -88,7 +91,6 @@ class ParsingManager(QThread):
 		self.panelApiClient = panelApiClient
 		self.currencyApiClient = currencyApiClient
 
-
 	# main parser func
 	def main(self):
 		resultInfo = []
@@ -100,8 +102,9 @@ class ParsingManager(QThread):
 		parser_balance = PanelBalanceParser(self.panelApiClient)
 		currency_parser = CurrencyRatesParser(self.currencyApiClient)
 		rate_usd = currency_parser.parse('USD')
-
 		currency_converter = CurrencyConverter(currency_parser, currency_cache, rate_usd)
+
+		# saver_to_database = SaverServices(self.databaseService)
 
 		dns_getter = DnsGetter(dns_cache)
 		try:
@@ -112,6 +115,7 @@ class ParsingManager(QThread):
 					if not url or not key: continue
 
 					try:
+<<<<<<< HEAD
 						atime_parser = AverageTimeParser()
 						atime_parser.parse(url + 'services')
 						average_time_result: dict[int, str] | None = atime_parser.parsingResult
@@ -127,9 +131,25 @@ class ParsingManager(QThread):
 							dns_getter=dns_getter,
 							average_time=average_time_result) # atime
 						resultInfo.extend(general_result)
+=======
+						# atime_parser = AverageTimeParser(self.panelApiClient)
+						# average_time_res = atime_parser.parse(url)
+						# if average_time_res:
+							# average_time: dict[int, str] | None = average_time_res.parsingResult
+
+							general_result = parse(
+								url=url, 
+								key=key, 
+								parser_currency_panel=parser_currency_panel, 
+								parser_services=parser_services, 
+								parser_balance=parser_balance, 
+								currency_converter=currency_converter, 
+								dns_getter=dns_getter) # atime
+							resultInfo.extend(general_result)
+							# saver_to_database.save_to_database(panel_id, general_result)
+>>>>>>> origin/search_branch
 					finally:
 						self.progress.emit()
-						print('Прогресс парсинга 1')
 					# general_result = parse(
 					# 	url=url, 
 					# 	key=key, 
@@ -141,7 +161,6 @@ class ParsingManager(QThread):
 
 				finally:
 					self.progress.emit()
-					print('Прогресс парсинга 2')
 
 			# returning result (panels info)
 		finally:

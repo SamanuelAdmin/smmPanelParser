@@ -22,9 +22,13 @@ from models.excel_manager.saver import ServicesSpliter, ServicesSaver
 # parsing logic
 from models.parser.parsing_manager import ParsingManager
 
+# saver
+from models.services_saver.services_saver_manager import ServicesSaverManager
+
 # import all exceptions
 from utils.exceptions.database_exceptions import *
 from utils.loggerbuffer import LoggerBuffer
+
 
 # import all views
 from views.main_view import MainWindow
@@ -73,9 +77,11 @@ class Controller(QObject):
 		self.view.btn_import.clicked.connect(self.import_excel_to_panels)
 		self.view.btn_export.clicked.connect(self.open_export_excel_dialog)
 		self.view.btn_check.clicked.connect(self.check_panels)
-		self.view.btn_parse.clicked.connect(self.ui_save_excel)
+		self.view.btn_parse.clicked.connect(self.start_parse)
 
 		self.view.btn_viewlog.clicked.connect(self.showEventLog)
+
+		self.view.btn_export_services.clicked.connect(self.ui_save_excel)
 
 	# ================== ADD PANEL ==================
 	def showEventLog(self):
@@ -131,7 +137,7 @@ class Controller(QObject):
 			MessageBox('Ошибка', 'Пожалуйста, заполните все поля', type_mes=QMessageBox.Icon.Critical)
 		else:
 			try:
-				self.databaseService.edit_panel(url, key, id)
+				self.databaseService.edit_panel(id, url, key)
 				self.load_panel_table()
 				self.edit_panel_dialog.accept() # close da window
 
@@ -332,18 +338,25 @@ class Controller(QObject):
 	def ui_save_excel(self):
 		self.save_excel_for_parse_dialog = save_excel_view.SaveExcelDialog()
 		self.save_excel_for_parse_dialog.set_dir_btn.clicked.connect(self.save_file_for_parse_dialog)
-		self.save_excel_for_parse_dialog.start.clicked.connect(self.start_parse)
+		self.save_excel_for_parse_dialog.start.clicked.connect(self.save_services)
 		self.save_excel_for_parse_dialog.exec()
 
 	def start_parse(self):
-		self.save_excel_for_parse_dialog.close()
 
 		# getting all panels
-		panels = self.databaseService.get_panels(filterFunc=lambda panel: panel[3]) # choice only working
-		try: assert len(panels) > 0
-		except AssertionError: 
-			MessageBox(title='Ошибка', text='Нечего парсить, так как все панели нерабочие или с нерабочим ключом', type_mes=QMessageBox.Icon.Critical)
+		try:
+			panels = self.databaseService.get_panels()
+			print(panels)
+			panels = sorted(panels, key=lambda x: x[3])
+		
+			try: assert len(panels) > 0
+			except AssertionError: 
+				MessageBox(title='Ошибка', text='Нечего парсить, так как все панели нерабочие или с нерабочим ключом', type_mes=QMessageBox.Icon.Critical)
+				return
+		except Exception as err:
+			MessageBox(title='Ошибка', text=f'Возникла непредвиденная ошибка при получении рабочих панелей, при запуске парсинга:\n{err}', type_mes=QMessageBox.Icon.Critical)
 			return
+
 
 		self.parser_panels = ParsingManager(
 			panels,
@@ -351,20 +364,36 @@ class Controller(QObject):
 			CurrencyApiClient( requests.Session() )
 		)
 
-		self.parser_panels.complete.connect(self.save_services)
+		self.parser_panels.complete.connect(self.save_services_to_database)
 		self.view.progress_bar.setValue(0)
-		self.view.progress_bar.setMaximum(len(panels) * 2)
+		self.view.progress_bar.setMaximum(len(panels))
 		self.parser_panels.progress.connect(self.view.update_progress)
+		self.view.progress_bar.setFormat("Спарсил: %p% (%v из %m)")
 
 		self.parser_panels.start()
 
 	@Slot(list)
-	def save_services(self, services):
-		self.view.progress_bar.setValue(0) # clear progress bar
+	def save_services_to_database(self, services):
+		self.view.progress_bar.setValue(0)
+		self.view.progress_bar.setMaximum(len(services))
+
+		print('Parsed serivce:', services[0])
+
+		self.serviceSaverManager = ServicesSaverManager(DatabaseService(database_controller.Database()))
+		self.serviceSaverManager.progress.connect(self.view.update_progress)
+		self.view.progress_bar.setFormat("Сохранил: %p% (%v из %m)")
+		self.serviceSaverManager.on_complite.connect(self.parsing_complete)
+		self.serviceSaverManager.setServices(services)
+		self.serviceSaverManager.start()
+
+	def save_services(self):
+		self.save_excel_for_parse_dialog.close()
+
+		services = self.databaseService.get_services()
 
 		try: assert len(services) > 0
 		except AssertionError: 
-			MessageBox(title='Ошибка', text='Нечего сохранять', type_mes=QMessageBox.Icon.Critical)
+			MessageBox(title='Ошибка', text='Нечего выгружать', type_mes=QMessageBox.Icon.Critical)
 			self.parsing_complete()
 			return
 
@@ -380,9 +409,10 @@ class Controller(QObject):
 				.setServices(splitedServices) \
 				.setSavingPath(self.save_excel_for_parse_dialog.export_path)
 
+		self.view.progress_bar.setMaximum(len(services))
+		self.view.progress_bar.setFormat("Сохранил: %p% (%v из %m)")
 		saver.on_save.connect(self.view.update_progress)
-		self.view.progress_bar.setMaximum(len(splitedServices))
-		saver.complete.connect(self.parsing_complete)
+		saver.complete.connect(self.saver_complete)
 		saver.start()
 
 		# fixing the "QThread error" (when thread already has been closed after saver start). This line allow to new thread work
@@ -390,9 +420,19 @@ class Controller(QObject):
 
 	def parsing_complete(self):
 		print('[INFO] Парсинг завершен успешно.')
-
+		self.view.progress_bar.setFormat("%p%")
 		MessageBox(
 			title='Успех', text='Успешно завершил парсинг!',
+			type_mes=QMessageBox.Icon.Information
+		)
+
+		self.view.progress_bar.setValue(0)
+
+	def saver_complete(self):
+		print('[INFO] Сохранение завершено успешно.')
+		self.view.progress_bar.setFormat("%p%")
+		MessageBox(
+			title='Успех', text='Успешно завершил сохранение!',
 			type_mes=QMessageBox.Icon.Information
 		)
 

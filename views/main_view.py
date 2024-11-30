@@ -172,7 +172,18 @@ class MainWindow(QMainWindow):
 
 		self.verticalLayout_4.addWidget(self.btn_parse)
 
+		self.btn_export_services = QPushButton(self.centralwidget)
+		self.btn_export_services.setObjectName(u"btn_export_services")
+		self.btn_export_services.setFont(QFont(font.setBold(True)))
+		self.btn_export_services.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+		self.btn_export_services.setAutoRepeat(False)
+		self.btn_export_services.setAutoDefault(False)
+		self.btn_export_services.setFlat(False)
+
+		self.verticalLayout_4.addWidget(self.btn_export_services)
+
 		self.progress_bar = QProgressBar()
+		self.progress_bar.setTextVisible(True)
 		self.verticalLayout_4.addWidget(self.progress_bar)
 
 		self.setCentralWidget(self.centralwidget)
@@ -201,6 +212,7 @@ class MainWindow(QMainWindow):
 		self.checkBox_check_keys.setText(QCoreApplication.translate("self", u"\u041f\u0440\u043e\u0432\u0435\u0440\u043a\u0430 \u043a\u043b\u044e\u0447\u0435\u0439 \u0442\u043e\u043b\u044c\u043a\u043e \u0432\u044b\u0434\u0435\u043b\u0435\u043d\u043d\u044b\u0445 \u0441\u0430\u0439\u0442\u043e\u0432", None))
 		self.btn_check.setText(QCoreApplication.translate("self", u"\u041f\u0420\u041e\u0412\u0415\u0420\u0418\u0422\u042c", None))
 		self.btn_parse.setText(QCoreApplication.translate("self", u"\u041f\u0410\u0420\u0421\u0418\u0422\u042c", None))
+		self.btn_export_services.setText('Выгрузить спарсенные сервисы')
 	# retranslateUi
 
 	def update_progress(self):
