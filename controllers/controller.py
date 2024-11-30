@@ -218,13 +218,18 @@ class Controller(QObject):
 		)
 
 		if file_dialog.exec_data == QFileDialog.Accepted:
-			self.export_excel_window.set_dir_btn.setText(file_dialog.selectedFiles()[0])
+			self.export_excel_window.set_dir_btn.setText(filename)
 			self.export_excel_window.save_btn.setEnabled(True)
-			self.export_excel_window.export_path = file_dialog.selectedFiles()[0]
+			self.export_excel_window.export_path = filename
 
 	def expot_excel(self):
 		if self.export_excel_window.export_path:
 			filename = self.export_excel_window.text_input.text().strip() if self.export_excel_window.text_input.text().strip() else 'export'
+
+			# set correct file name if need it (yeah, again)
+			INVALID_SYMBOLS = '\'/\\:*?"<>|.'
+			filename = ''.join(list(filter(lambda x: x not in INVALID_SYMBOLS, filename))) \
+				.replace('\\', '_')
 
 			if self.export_excel_window.radio_btn_work.isChecked():
 				query = self.databaseService.get_panels_by(work=True)
@@ -261,25 +266,28 @@ class Controller(QObject):
 	def on_check_completed(self):
 		self.load_panel_table()
 
+		self.view.progress_bar.setValue(0)
+
 		if self.checkResultSaver:
-			file_dialog = choice_file_view.FileDialog(
-				'Выберите дерикторию для сохранения результатов проверки',
-				file_mode=QFileDialog.Directory
-			)
+			if not self.checkResultSaver.isEmpty():
+				file_dialog = choice_file_view.FileDialog(
+					'Выберите дерикторию для сохранения результатов проверки',
+					file_mode=QFileDialog.Directory
+				)
 
-			if file_dialog.exec_data == QFileDialog.Accepted:
-				filename = f'check_result_{str(datetime.now())[:-7]}.xlsx' \
-					.replace(':', '_') \
-					.replace(' ', '_')
+				if file_dialog.exec_data == QFileDialog.Accepted:
+					filename = f'check_result_{str(datetime.now())[:-7]}.xlsx' \
+						.replace(':', '_') \
+						.replace(' ', '_')
 
-				if self.checkResultSaver.save(
-					# path to file + filename
-					f'{file_dialog.selectedFiles()[0]}/{filename}'
-				):
-					MessageBox(title='Успех', text=f'Результаты проверки сохранены в файл {filename}', type_mes=QMessageBox.Icon.Information)
-		else:
-			MessageBox(title='Успех', text='Успешно завершил проверку!', type_mes=QMessageBox.Icon.Information)
-			self.view.progress_bar.setValue(0)
+					if self.checkResultSaver.save(
+						# path to file + filename
+						f'{file_dialog.selectedFiles()[0]}/{filename}'
+					):
+						return MessageBox(title='Успех', text=f'Результаты проверки сохранены в файл {filename}', type_mes=QMessageBox.Icon.Information)
+
+		return MessageBox(title='Успех', text='Успешно завершил проверку!', type_mes=QMessageBox.Icon.Information)
+
 
 	def check_panels(self):
 		selected_rows = self.view.tableView.selectionModel().selectedRows(column=0)  # забираем id записей
@@ -331,9 +339,11 @@ class Controller(QObject):
 		file_dialog = choice_file_view.FileDialog('Выберите дерикторию для сохранения', file_mode=QFileDialog.Directory)
 
 		if file_dialog.exec_data == QFileDialog.Accepted:
-			self.save_excel_for_parse_dialog.set_dir_btn.setText(file_dialog.selectedFiles()[0])
+			dirname = file_dialog.selectedFiles()[0]
+
+			self.save_excel_for_parse_dialog.set_dir_btn.setText(dirname)
 			self.save_excel_for_parse_dialog.start.setEnabled(True)
-			self.save_excel_for_parse_dialog.export_path = file_dialog.selectedFiles()[0]
+			self.save_excel_for_parse_dialog.export_path = dirname
 
 	def ui_save_excel(self):
 		self.save_excel_for_parse_dialog = save_excel_view.SaveExcelDialog()

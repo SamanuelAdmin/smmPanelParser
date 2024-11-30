@@ -20,6 +20,9 @@ class CheckResultSaver:
 
         self.saving_buffer.append(data)
 
+    def isEmpty(self):
+        return len(self.saving_buffer) == 0
+
     def save(self, fullFilePath: str) -> bool:
         columns = {
             0: ('url', 'URL'),
