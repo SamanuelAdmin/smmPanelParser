@@ -218,6 +218,8 @@ class Controller(QObject):
 		)
 
 		if file_dialog.exec_data == QFileDialog.Accepted:
+			filename = file_dialog.selectedFiles()[0]
+
 			self.export_excel_window.set_dir_btn.setText(filename)
 			self.export_excel_window.save_btn.setEnabled(True)
 			self.export_excel_window.export_path = filename
@@ -231,29 +233,29 @@ class Controller(QObject):
 			filename = ''.join(list(filter(lambda x: x not in INVALID_SYMBOLS, filename))) \
 				.replace('\\', '_')
 
+			query = None # objects to save
+
 			if self.export_excel_window.radio_btn_work.isChecked():
 				query = self.databaseService.get_panels_by(work=True)
-				ExcelController.export_excel_file(query, self.export_excel_window.export_path, filename)
-
-				MessageBox(
-					'Успех',
-					f'Успешно экспортировал в excel файл!\n"{self.export_excel_window.export_path}/{filename}.xlsx"',
-					type_mes=QMessageBox.Icon.Information
-				)
-
 			elif self.export_excel_window.radio_btn_key_not_worked.isChecked():
 				query = self.databaseService.get_panels_by(worked_keys_sites=True)
-				ExcelController.export_excel_file(query, self.export_excel_window.export_path, filename)
-
-				MessageBox(
-					'Успех',
-					f'Успешно экспортировал в excel файл!\n{self.export_excel_window.export_path}/{filename}.xlsx',
-						type_mes=QMessageBox.Icon.Information
-				)
 			else:
-				MessageBox('Ошибка', 'Пожалуйста, выберите как именно экспортировать',
+				return MessageBox('Ошибка', 'Пожалуйста, выберите как именно экспортировать',
 						   type_mes=QMessageBox.Icon.Critical)
-				return
+
+			if len(query) == 0:
+				self.export_excel_window.close()
+
+				return MessageBox('Инфо', 'Нет не рабочих сайтов или не верных ключей!',
+						   type_mes=QMessageBox.Icon.Information)
+
+			ExcelController.export_excel_file(query, self.export_excel_window.export_path, filename)
+
+			MessageBox(
+				'Успех',
+				f'Успешно экспортировал в excel файл!\n"{self.export_excel_window.export_path}/{filename}.xlsx"',
+				type_mes=QMessageBox.Icon.Information
+			)
 
 			self.export_excel_window.close()
 
