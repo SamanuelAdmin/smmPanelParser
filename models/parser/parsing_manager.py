@@ -1,6 +1,7 @@
 from PySide6.QtCore import QThread, Signal
 import requests
 
+from models.parser.average_time_parser import AverageTimeParser
 # from models.parser.average_time_parser import AverageTimeParser
 from models.parser.currency_converter import CurrencyConverter, ICurrencyConverter
 from models.parser.dns import DnsGetter, IDnsGetter
@@ -115,7 +116,6 @@ class ParsingManager(QThread):
 					if not url or not key: continue
 
 					try:
-<<<<<<< HEAD
 						atime_parser = AverageTimeParser()
 						atime_parser.parse(url + 'services')
 						average_time_result: dict[int, str] | None = atime_parser.parsingResult
@@ -131,23 +131,6 @@ class ParsingManager(QThread):
 							dns_getter=dns_getter,
 							average_time=average_time_result) # atime
 						resultInfo.extend(general_result)
-=======
-						# atime_parser = AverageTimeParser(self.panelApiClient)
-						# average_time_res = atime_parser.parse(url)
-						# if average_time_res:
-							# average_time: dict[int, str] | None = average_time_res.parsingResult
-
-							general_result = parse(
-								url=url, 
-								key=key, 
-								parser_currency_panel=parser_currency_panel, 
-								parser_services=parser_services, 
-								parser_balance=parser_balance, 
-								currency_converter=currency_converter, 
-								dns_getter=dns_getter) # atime
-							resultInfo.extend(general_result)
-							# saver_to_database.save_to_database(panel_id, general_result)
->>>>>>> origin/search_branch
 					finally:
 						self.progress.emit()
 					# general_result = parse(

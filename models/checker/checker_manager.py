@@ -5,14 +5,10 @@ from models.database_service import DatabaseService
 
 
 class CheckerManager:
-<<<<<<< HEAD
     def __init__(
             self, databaseService, checker: IPanelPerfomanceChecker,
             checkResultSaver = None
     ):
-=======
-    def __init__(self, databaseService: DatabaseService, checker: IPanelPerfomanceChecker):
->>>>>>> origin/search_branch
         self.databaseService = databaseService
         self.checker = checker
         self.checkResultSaver = checkResultSaver
