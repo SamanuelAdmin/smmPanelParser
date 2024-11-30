@@ -358,7 +358,6 @@ class Controller(QObject):
 		# getting all panels
 		try:
 			panels = self.databaseService.get_panels()
-			print(panels)
 			panels = sorted(panels, key=lambda x: x[3])
 		
 			try: assert len(panels) > 0
