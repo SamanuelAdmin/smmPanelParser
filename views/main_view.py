@@ -164,7 +164,7 @@ class MainWindow(QMainWindow):
 
 		self.btn_parse = QPushButton(self.centralwidget)
 		self.btn_parse.setObjectName(u"btn_parse")
-		self.btn_parse.setFont(QFont(font.setBold(True)))
+		# self.btn_parse.setFont(QFont(font.setBold(True)))
 		self.btn_parse.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 		self.btn_parse.setAutoRepeat(False)
 		self.btn_parse.setAutoDefault(False)
@@ -174,7 +174,7 @@ class MainWindow(QMainWindow):
 
 		self.btn_export_services = QPushButton(self.centralwidget)
 		self.btn_export_services.setObjectName(u"btn_export_services")
-		self.btn_export_services.setFont(QFont(font.setBold(True)))
+		# self.btn_export_services.setFont(QFont(font.setBold(True)))
 		self.btn_export_services.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 		self.btn_export_services.setAutoRepeat(False)
 		self.btn_export_services.setAutoDefault(False)
