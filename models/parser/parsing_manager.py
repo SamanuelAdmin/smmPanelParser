@@ -58,21 +58,23 @@ def parse(
 		currency_converter: ICurrencyConverter,
 		dns_getter: IDnsGetter,
 		average_time=None
-	):
+	) -> None|list[dict]:
 	url = url.strip()
 	key = key.strip()
-
-	try:
-		currency_code_panel = parser_currency_panel.parse(url, key)
-	except Exception as err:
-		print(err)
 
 	services = parser_services.parse(url, key)
 	balance = parser_balance.parse(url, key)
 
 	if average_time:
 		services = atime_add_to_json(services, average_time)
-	services = currency_add_to_json(services, currency_code_panel)
+
+	try:
+		currency_code_panel = parser_currency_panel.parse(url, key)
+		services = currency_add_to_json(services, currency_code_panel)
+	except Exception as err:
+		print(err)
+		return None
+
 	services = usd_add_to_json(currency_converter, services)
 	services = dns_add_to_json(services, dns_getter)
 	
@@ -80,6 +82,7 @@ def parse(
 	else: services = balance_add_to_json(services, 'не смог получить')
 
 	return services
+
 
 class ParsingManager(QThread):
 	progress = Signal()
@@ -130,7 +133,8 @@ class ParsingManager(QThread):
 							currency_converter=currency_converter,
 							dns_getter=dns_getter,
 							average_time=average_time_result) # atime
-						resultInfo.extend(general_result)
+
+						if general_result != None: resultInfo.extend(general_result)
 					finally:
 						self.progress.emit()
 					# general_result = parse(

@@ -34,7 +34,7 @@ class PanelServicesParser(IPanelServicesParser):
 						'price': float(price_ser),
 					}
 				)
-			except KeyError:
+			except Exception:
 				print('Ошибка в структуре сервиса')
 				continue
 		return parsed_data
