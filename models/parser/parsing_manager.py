@@ -63,6 +63,8 @@ def parse(
 	key = key.strip()
 
 	services = parser_services.parse(url, key)
+	if not services: return None
+
 	balance = parser_balance.parse(url, key)
 
 	if average_time:

@@ -16,8 +16,10 @@ class PanelServicesParser(IPanelServicesParser):
 	def parse(self, url: str, key: str) -> list[dict] | None:
 		services_data = self.api_client.get_info(url, key, 'services')
 		if not services_data.success:
-			raise ValueError(f'Не удалось получить сервисы панели {url}')
-		
+			# raise ValueError(f'Не удалось получить сервисы панели {url}')
+			print(f'Не удалось получить сервисы панели {url}')
+			return None
+
 		parsed_data = []
 		for service in services_data.data:
 			try:

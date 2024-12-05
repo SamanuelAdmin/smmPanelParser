@@ -6,7 +6,7 @@ class Saver:
 
 	def __add_service(self, service: dict) -> None:
 		# print()
-		self.databaseServices.add_service(service)
+		self.databaseServices.add_service(service, commit=False)
 		# print(f'Добавил сервис {service["service_id"]}({service["name"]})')
 		# print()
 
@@ -23,7 +23,8 @@ class Saver:
 					{
 						key: value,
 						'id': old_service['id']
-					}
+					},
+					commit=False
 				)
 				# print(f'У {old_service["service_id"]} изменился {key} с {old_service[key]} на {value}')
 		# print()
@@ -42,3 +43,5 @@ class Saver:
 					self.__update_service(parsed_service, data[0])
 			finally:
 				yield
+
+		self.databaseServices.save_changes()

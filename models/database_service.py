@@ -8,17 +8,17 @@ class DatabaseService:
         self.databaseController = databaseController
 
     # CRUD METHODS
-    def add_panel(self, url: str, api_key: str) -> None: # create
-        self.databaseController.add_panel(url, api_key)
+    def add_panel(self, url: str, api_key: str, commit=True) -> None: # create
+        self.databaseController.add_panel(url, api_key, commit=commit)
 
-    def add_service(self, data: dict):
-        self.databaseController.add_service(data)
+    def add_service(self, data: dict, commit=True):
+        self.databaseController.add_service(data, commit=commit)
     
-    def edit_service(self, data: dict):
-        self.databaseController.edit_service(data)
+    def edit_service(self, data: dict, commit=True):
+        self.databaseController.edit_service(data, commit=commit)
 
-    def edit_panel(self, id: int, url: str=None, api_key: str=None, work: bool=None, valid_api_key: bool=None) -> None: # update
-        self.databaseController.edit_panel(id, url, api_key, work, valid_api_key)
+    def edit_panel(self, id: int, url: str=None, api_key: str=None, work: bool=None, valid_api_key: bool=None, commit=True) -> None: # update
+        self.databaseController.edit_panel(id, url, api_key, work, valid_api_key, commit=commit)
 
     def get_panels(self) -> list: # read
         return self.databaseController.get_panels()
@@ -37,5 +37,8 @@ class DatabaseService:
         elif worked_keys_sites: return self.databaseController.get_panels_by_worked_keys_sites()
         else: raise Exception()
 
-    def delete_panel(self, id: int): # delete
-        self.databaseController.delete_panel_by_id(id)
+    def delete_panel(self, id: int, commit=True): # delete
+        self.databaseController.delete_panel_by_id(id, commit=commit)
+
+    def save_changes(self): # just a commit
+        self.databaseController.save_changes()

@@ -117,13 +117,15 @@ class Database(metaclass=SingletonMeta):
 		return {col[0]: row[idx] for idx, col in enumerate(cursor.description)}
 	
 	@classmethod
-	def execute(cls, *args, is_row_factory = False) -> list | None:
+	def execute(cls, *args, is_row_factory = False, need_commit=True) -> list | None:
 		if cls.__connection is not None and cls.__cursor is not None:
 			res = cls.__cursor.execute(*args)
 
-			for key in ['CREATE', 'INSERT', 'UPDATE', 'DELETE']:
-				if key in args[0]:
-					cls.__connection.commit()
+			if need_commit:
+				for key in ['CREATE', 'INSERT', 'UPDATE', 'DELETE']:
+					if key in args[0]:
+						cls.__connection.commit()
+
 			if 'SELECT' in args[0]:
 				if is_row_factory:
 					# Для получения результата в виде list[dict], а не list[tuple]
@@ -131,6 +133,10 @@ class Database(metaclass=SingletonMeta):
 				return_data = res.fetchall()
 				cls.__cursor.row_factory = None
 				return return_data
+
+	@classmethod
+	def commit(cls):
+		cls.__connection.commit()
 			
 	@classmethod
 	def create_table(cls) -> None:
@@ -143,9 +149,9 @@ class Database(metaclass=SingletonMeta):
 	######################  working with services  ########################
 	###########################              ##############################
 	#######################################################################
-	def add_service(self, data: dict) -> None:
+	def add_service(self, data: dict, commit=True) -> None:
 		try:
-			Database.execute(ServicesDatabaseConfig.query_insert(data), data)
+			Database.execute(ServicesDatabaseConfig.query_insert(data), data, need_commit=commit)
 		except Exception as err:
 			raise err
 		
@@ -161,9 +167,9 @@ class Database(metaclass=SingletonMeta):
 		except Exception as err:
 			raise err
 		
-	def edit_service(self, data: dict):
+	def edit_service(self, data: dict, commit=True):
 		try:
-			Database.execute(ServicesDatabaseConfig.query_edit(data), data)
+			Database.execute(ServicesDatabaseConfig.query_edit(data), data, need_commit=commit)
 		except Exception as err:
 			raise err
 	
@@ -172,22 +178,24 @@ class Database(metaclass=SingletonMeta):
 	######################    working with panels    ######################
 	###########################              ##############################
 	#######################################################################
-	def add_panel(self, url: str, api_key: str) -> None:
+	def add_panel(self, url: str, api_key: str, commit: bool=True) -> None:
 		try:
 			Database.execute(
 				PanelsDatabaseConfig.add_panel,
-				(url.strip(), api_key.strip(), )
+				(url.strip(), api_key.strip(), ),
+				need_commit=commit
 			)
 		except Exception as err:
 			raise err
 		
-	def edit_panel(self, id: int, url: str=None, api_key: str=None, work: bool=None, valid_api_key: bool=None) -> None:
+	def edit_panel(self, id: int, url: str=None, api_key: str=None, work: bool=None, valid_api_key: bool=None, commit: bool=True) -> None:
 		try:
 			Database.execute(
 				PanelsDatabaseConfig.edit_panel.format(
-					params=DatabaseConfig.generate_params_string(url=url.strip(), api_key=api_key.strip(), work=work, valid_api_key=valid_api_key),
+					params=DatabaseConfig.generate_params_string(url=url.strip() if url else None, api_key=api_key.strip() if api_key else None, work=work, valid_api_key=valid_api_key),
 					id=id
-				)
+				),
+				need_commit=commit
 			)
 		except Exception as err:
 			raise err
@@ -201,9 +209,9 @@ class Database(metaclass=SingletonMeta):
 		except Exception as err:
 			print(f"Неизвестная ошибка при получении записи по id({id=}) из бд\n", err)
 	
-	def delete_panel_by_id(self, id) -> None:
+	def delete_panel_by_id(self, id, commit=True) -> None:
 		try:
-			Database.execute(PanelsDatabaseConfig.delete_panel_by_id, (id,))
+			Database.execute(PanelsDatabaseConfig.delete_panel_by_id, (id,), need_commit=commit)
 		except Exception as err:
 			print(f"Неизвестная ошибка при получении записи по id({id=}) из бд\n", err)
 
@@ -224,3 +232,6 @@ class Database(metaclass=SingletonMeta):
 			return Database.execute(PanelsDatabaseConfig.get_panels_by_worked_keys_sites, (is_worked_keys_sites, ))
 		except Exception as err:
 			print(f"Неизвестная ошибка при получении нерабочих панелей из бд\n", err)
+
+	def save_changes(self):
+		Database.commit()
