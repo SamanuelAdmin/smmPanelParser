@@ -28,10 +28,12 @@ class DatabaseService:
     
     def get_service_by(self, data: dict) -> None:
         return self.databaseController.get_service_by(data)
-
-    def get_panels_by(self, panel_id: int=None, work=False, worked_keys_sites=False):
+    
+    def get_panels_by(self, panel_id: int=None, work=None, worked_keys_sites=None):
         if panel_id != None: return self.databaseController.get_panel_by_id(panel_id)[0] # returning tuple
-        if work: return self.databaseController.get_panels_by_work()
+
+        if work and worked_keys_sites: return self.databaseController.get_panels_by_work_and_valid_key()
+        elif work: return self.databaseController.get_panels_by_work()
         elif worked_keys_sites: return self.databaseController.get_panels_by_worked_keys_sites()
         else: raise Exception()
 

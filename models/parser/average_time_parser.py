@@ -112,8 +112,14 @@ class AverageTimeParser:
         session = requests.Session()
         session.headers.update({'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.5993.89 Safari/537.36'})
 
-        content = session.get(URL)
-        if content.status_code != 200:
+        content = None
+        try: 
+            content = session.get(URL)
+        except Exception as err:
+            print(f'Ошибка при запросе на atime, ', err)
+            return False
+        
+        if content is not None and content.status_code != 200:
             print(content.status_code)
             return False
 

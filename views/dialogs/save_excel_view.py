@@ -23,7 +23,7 @@ class SaveExcelDialog(QDialog):
 		self.set_dir_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 		self.layout.addWidget(self.set_dir_btn)
 
-		self.start = QPushButton(text='Начать парсить')
+		self.start = QPushButton(text='Начать сохранять в Excel')
 		self.start.setEnabled(False)
 		self.start.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 		self.layout.addWidget(self.start)

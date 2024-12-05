@@ -1,8 +1,11 @@
 import os
 import threading
+import requests
+
 from fileinput import filename
 
-import requests
+from urllib.parse import urlparse
+
 from PySide6.QtCore import QObject, Slot
 from PySide6.QtWidgets import QMessageBox, QFileDialog
 from datetime import datetime
@@ -83,11 +86,14 @@ class Controller(QObject):
 
 		self.view.btn_export_services.clicked.connect(self.ui_save_excel)
 
-	# ================== ADD PANEL ==================
 	def showEventLog(self):
 		self.logsWindow = event_log_view.LogWindow(self.loggerBuffer)
 		self.logsWindow.show()
 
+	def url_validation(self, url: str) -> bool:
+		validation_url = urlparse(url)
+		return all([validation_url.scheme, validation_url.netloc, validation_url.path])
+	
 	# ================== ADD PANEL ==================
 	def open_dialog_new_panel(self) -> None:
 		self.new_panel_dialog = new_panel_view.NewPanel()
@@ -98,14 +104,20 @@ class Controller(QObject):
 	def add_panel(self) -> None:
 		url = self.new_panel_dialog.lineEdit_2.text()
 		key = self.new_panel_dialog.lineEdit.text()
+
 		if not url or not key:
 			MessageBox('Ошибка', 'Пожалуйста, заполните все поля', type_mes=QMessageBox.Icon.Critical)
-		elif not 'https://' in url:
-			MessageBox('Ошибка', 'Введенный url неправильный, нехвататет протокола https://', type_mes=QMessageBox.Icon.Critical)
 		else:
-			self.databaseService.add_panel(url, key)
-			self.load_panel_table()  # refresh panel table
-			self.new_panel_dialog.accept()
+			try:
+				validation_url = self.url_validation(url)
+				if validation_url:
+					self.databaseService.add_panel(url, key)
+					self.load_panel_table()  # refresh panel table
+					self.new_panel_dialog.accept()
+				else:
+					MessageBox('Ошибка', 'Неправильный url', type_mes=QMessageBox.Icon.Critical)
+			except Exception as err:
+				MessageBox('Ошибка', err, type_mes=QMessageBox.Icon.Critical)
 
 
 	# ================== EDIT PANEL ==================
@@ -191,8 +203,15 @@ class Controller(QObject):
 				for row in rows:
 					if row[0].value and row[1].value:
 						try:
+							url = str(row[0].value)
+							key = str(row[1].value)
+
+
+							if not self.url_validation(url):
+								continue
+
 							self.databaseService.add_panel(
-								str(row[0].value), str(row[1].value)
+								url, key
 							)
 						except UniqueError as error: continue # will not save is value is already exist
 
@@ -357,8 +376,8 @@ class Controller(QObject):
 
 		# getting all panels
 		try:
-			panels = self.databaseService.get_panels()
-			panels = sorted(panels, key=lambda x: x[3])
+			panels = self.databaseService.get_panels_by(work=True, worked_keys_sites=True)
+			panels = sorted(panels, key=lambda x: x[3] and x[4])
 		
 			try: assert len(panels) > 0
 			except AssertionError: 
@@ -368,13 +387,11 @@ class Controller(QObject):
 			MessageBox(title='Ошибка', text=f'Возникла непредвиденная ошибка при получении рабочих панелей, при запуске парсинга:\n{err}', type_mes=QMessageBox.Icon.Critical)
 			return
 
-
 		self.parser_panels = ParsingManager(
 			panels,
 			PanelApiClient().setSession( requests.Session() ),
 			CurrencyApiClient( requests.Session() )
 		)
-
 		self.parser_panels.complete.connect(self.save_services_to_database)
 		self.view.progress_bar.setValue(0)
 		self.view.progress_bar.setMaximum(len(panels))
@@ -388,13 +405,12 @@ class Controller(QObject):
 		self.view.progress_bar.setValue(0)
 		self.view.progress_bar.setMaximum(len(services))
 
-		print('Parsed serivce:', services[0])
-
 		self.serviceSaverManager = ServicesSaverManager(DatabaseService(database_controller.Database()))
 		self.serviceSaverManager.progress.connect(self.view.update_progress)
-		self.view.progress_bar.setFormat("Сохранил: %p% (%v из %m)")
+		self.view.progress_bar.setFormat("Добавил/Изменил: %p% (%v из %m)")
 		self.serviceSaverManager.on_complite.connect(self.parsing_complete)
 		self.serviceSaverManager.setServices(services)
+
 		self.serviceSaverManager.start()
 
 	def save_services(self):

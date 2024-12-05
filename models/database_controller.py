@@ -39,6 +39,8 @@ class PanelsDatabaseConfig:
 	get_panels_by_work = '''SELECT * FROM panels WHERE work=?'''
 	get_panels_by_worked_keys_sites = '''SELECT * FROM panels WHERE valid_api_key=?'''
 
+	get_panels_by_work_and_valid_key = '''SELECT * FROM panels WHERE work=? AND valid_api_key=?'''
+
 class ServicesDatabaseConfig:
 	@staticmethod
 	def query_insert(data: dict) -> str:
@@ -183,7 +185,7 @@ class Database(metaclass=SingletonMeta):
 		try:
 			Database.execute(
 				PanelsDatabaseConfig.edit_panel.format(
-					params=DatabaseConfig.generate_params_string(url=url, api_key=api_key, work=work, valid_api_key=valid_api_key),
+					params=DatabaseConfig.generate_params_string(url=url.strip(), api_key=api_key.strip(), work=work, valid_api_key=valid_api_key),
 					id=id
 				)
 			)
@@ -204,6 +206,12 @@ class Database(metaclass=SingletonMeta):
 			Database.execute(PanelsDatabaseConfig.delete_panel_by_id, (id,))
 		except Exception as err:
 			print(f"Неизвестная ошибка при получении записи по id({id=}) из бд\n", err)
+
+	def get_panels_by_work_and_valid_key(self, work=True, valid_api_key=True) -> list:
+		try:
+			return Database.execute(PanelsDatabaseConfig.get_panels_by_work_and_valid_key, (work, valid_api_key))
+		except Exception as err:
+			raise err
 
 	def get_panels_by_work(self, is_work=False) -> list:
 		try:

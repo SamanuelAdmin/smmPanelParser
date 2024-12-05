@@ -34,9 +34,11 @@ class Saver:
 				data = self.databaseServices.get_service_by(
 					{'url': parsed_service['url'], 'service_id': parsed_service['service_id']}
 				)
-				if not data:
+				if not data: 
+					# print('Add:', parsed_service)
 					self.__add_service(parsed_service)
 				else:
+					# print('Edit:', data[0], ' to:', parsed_service)
 					self.__update_service(parsed_service, data[0])
 			finally:
 				yield

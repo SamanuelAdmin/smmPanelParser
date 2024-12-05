@@ -124,6 +124,7 @@ class ParsingManager(QThread):
 						average_time_result: dict[int, str] | None = atime_parser.parsingResult
 						self.progress.emit()
 
+
 						general_result = parse(
 							url=url,
 							key=key,

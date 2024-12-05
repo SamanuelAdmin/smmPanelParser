@@ -1,6 +1,8 @@
 from abc import abstractmethod, ABC
 
 
+from models.api_manager.api_client import IPanelApiClient
+
 class IPanelServicesParser(ABC):
 	@abstractmethod
 	def parse(self, url: str, key: str) -> list[dict] | None:
@@ -8,7 +10,7 @@ class IPanelServicesParser(ABC):
 
 
 class PanelServicesParser(IPanelServicesParser):
-	def __init__(self, api_client):
+	def __init__(self, api_client: IPanelApiClient):
 		self.api_client = api_client
 
 	def parse(self, url: str, key: str) -> list[dict] | None:
@@ -34,7 +36,7 @@ class PanelServicesParser(IPanelServicesParser):
 						'price': float(price_ser),
 					}
 				)
-			except Exception:
-				print('Ошибка в структуре сервиса')
+			except Exception as err:
+				print('Ошибка в структуре сервиса,', err)
 				continue
 		return parsed_data
