@@ -14,6 +14,7 @@ class CheckerManager:
         self.checkResultSaver = checkResultSaver
 
     def startCheckingPanelsKey(self, panels):
+        print('\nНачал проверку ключей')
         for panel in panels:
             try:
                 panel_id, url, key, is_work, is_work_key = panel
@@ -46,6 +47,7 @@ class CheckerManager:
                 yield True
 
     def startCheckingPanelsWork(self, panels):
+        print('\nНачал проверку панелей на работоспособность')
         for panel in panels:
             try:
                 panel_id, url, key, is_working, is_work_key = panel

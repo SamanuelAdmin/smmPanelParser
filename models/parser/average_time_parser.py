@@ -114,7 +114,7 @@ class AverageTimeParser:
 
         content = None
         try: 
-            content = session.get(URL)
+            content = session.get(URL, verify=False)
         except Exception as err:
             print(f'Ошибка при запросе на atime, ', err)
             return False

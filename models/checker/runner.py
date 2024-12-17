@@ -36,6 +36,7 @@ class CheckerRunner(QThread):
 
 
     def startChecker(self):
+
         checker = PanelPerfomanceChecker(self.panelApiClient)
 
         manager = CheckerManager(
