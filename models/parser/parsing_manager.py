@@ -1,6 +1,10 @@
+from cgi import parse_multipart
+
 from PySide6.QtCore import QThread, Signal
 import requests
 
+from models.api_manager.api_client import PanelApiClient, CurrencyApiClient
+from models.api_manager.user_agent_manager import getRandomUserAgent
 from models.parser.average_time_parser import AverageTimeParser
 # from models.parser.average_time_parser import AverageTimeParser
 from models.parser.currency_converter import CurrencyConverter, ICurrencyConverter
@@ -90,12 +94,26 @@ class ParsingManager(QThread):
 	progress = Signal()
 	complete = Signal(list)
 
-	def __init__(self, panels: list[tuple], panelApiClient, currencyApiClient) -> None:
+	def __init__(self, panels: list[tuple]) -> None:
 		super().__init__()
 
 		self.panelsForParsing: list[tuple] = panels
-		self.panelApiClient = panelApiClient
-		self.currencyApiClient = currencyApiClient
+
+
+	def generateApiClients(self):
+		panelApiClientSession = requests.Session()
+		panelApiClientSession.headers.update(
+			{
+				'User-Agent': getRandomUserAgent(),
+			}
+		)
+
+		currencyApiClientSession = requests.Session()
+
+		panelApiClient = PanelApiClient().setSession(panelApiClientSession)
+		currencyApiClient = CurrencyApiClient( currencyApiClientSession )
+
+		return panelApiClient, currencyApiClient
 
 	# main parser func
 	def main(self):
@@ -103,56 +121,64 @@ class ParsingManager(QThread):
 		currency_cache = dict()
 		dns_cache = dict()
 
-		parser_currency_panel = PanelCurrencyParser(self.panelApiClient)
-		parser_services = PanelServicesParser(self.panelApiClient)
-		parser_balance = PanelBalanceParser(self.panelApiClient)
-		currency_parser = CurrencyRatesParser(self.currencyApiClient)
-		rate_usd = currency_parser.parse('USD')
-		currency_converter = CurrencyConverter(currency_parser, currency_cache, rate_usd)
+		# panelApiClient, currencyApiClient = self.generateApiClients()
+		#
+		# parser_currency_panel = PanelCurrencyParser(panelApiClient)
+		# parser_services = PanelServicesParser(panelApiClient)
+		# parser_balance = PanelBalanceParser(panelApiClient)
+		# currency_parser = CurrencyRatesParser(currencyApiClient)
+		# rate_usd = currency_parser.parse('USD')
+		# currency_converter = CurrencyConverter(currency_parser, currency_cache, rate_usd)
 
 		# saver_to_database = SaverServices(self.databaseService)
 
 		dns_getter = DnsGetter(dns_cache)
+
+
 		try:
 			for panel in self.panelsForParsing:
+				# creating parsers obj
+				panelApiClient, currencyApiClient = self.generateApiClients()
+
+				parser_currency_panel = PanelCurrencyParser(panelApiClient)
+				parser_services = PanelServicesParser(panelApiClient)
+				parser_balance = PanelBalanceParser(panelApiClient)
+				currency_parser = CurrencyRatesParser(currencyApiClient)
+				rate_usd = currency_parser.parse('USD')
+				currency_converter = CurrencyConverter(currency_parser, currency_cache, rate_usd)
+
 				try:
 					panel_id, url, key, is_work, is_work_key = panel
+					print(f'Идет парсинг {url} {key}')
 
 					if not url or not key: continue
 
-					try:
-						atime_parser = AverageTimeParser()
-						atime_parser.parse(url + 'services')
-						average_time_result: dict[int, str] | None = atime_parser.parsingResult
-						self.progress.emit()
+					atime_parser = AverageTimeParser()
+					atime_parser.parse(url + 'services')
+					average_time_result: dict[int, str] | None = atime_parser.parsingResult
+					self.progress.emit()
 
 
-						general_result = parse(
-							url=url,
-							key=key,
-							parser_currency_panel=parser_currency_panel,
-							parser_services=parser_services,
-							parser_balance=parser_balance,
-							currency_converter=currency_converter,
-							dns_getter=dns_getter,
-							average_time=average_time_result) # atime
+					general_result = parse(
+						url=url,
+						key=key,
+						parser_currency_panel=parser_currency_panel,
+						parser_services=parser_services,
+						parser_balance=parser_balance,
+						currency_converter=currency_converter,
+						dns_getter=dns_getter,
+						average_time=average_time_result # atime
+					)
 
-						if general_result != None: resultInfo.extend(general_result)
-					finally:
-						self.progress.emit()
-					# general_result = parse(
-					# 	url=url, 
-					# 	key=key, 
-					# 	parser_currency_panel=parser_currency_panel, 
-					# 	parser_services=parser_services, 
-					# 	parser_balance=parser_balance, 
-					# 	currency_converter=currency_converter, 
-					# 	dns_getter=dns_getter)
+					if general_result != None: resultInfo.extend(general_result)
 
+				except Exception as err:
+					print(err)
 				finally:
 					self.progress.emit()
 
-			# returning result (panels info)
+		except Exception as err:
+			print(err)
 		finally:
 			self.complete.emit(resultInfo)
 

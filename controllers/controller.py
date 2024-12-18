@@ -387,11 +387,12 @@ class Controller(QObject):
 			MessageBox(title='Ошибка', text=f'Возникла непредвиденная ошибка при получении рабочих панелей, при запуске парсинга:\n{err}', type_mes=QMessageBox.Icon.Critical)
 			return
 
+
 		self.parser_panels = ParsingManager(
-			panels,
-			PanelApiClient().setSession( requests.Session() ),
-			CurrencyApiClient( requests.Session() )
-		)
+			panels
+		) # sessions will be created at the parsing manager
+		# it wont be only one - every single session for every panel
+
 		self.parser_panels.complete.connect(self.save_services_to_database)
 		self.view.progress_bar.setValue(0)
 		self.view.progress_bar.setMaximum(len(panels))
