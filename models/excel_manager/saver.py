@@ -32,16 +32,16 @@ class ServicesSpliter(ISpliterServices):
 
         service_counter = 0
         res = []
-        spliting_services = []
+        split_services = []
         for service in services:
-            spliting_services.append(service)
+            split_services.append(service)
             service_counter += 1
             if service_counter == max_count:
-                res.append(spliting_services)
-                spliting_services = []
+                res.append(split_services)
+                split_services = []
                 service_counter = 0
 
-        if spliting_services: res.append(spliting_services)
+        if split_services: res.append(split_services)
         return res
 
 
@@ -88,8 +88,8 @@ class ServicesSaver(QThread):
 
             workbook.close()
             del workbook, worksheet
-            self.services.remove(service_list)
 
+            self.on_save.emit()
             print(f'[+] SAVE {full_path}')
 
     def _write_service(self, service: dict, worksheet: Worksheet) -> None:
@@ -98,10 +98,9 @@ class ServicesSaver(QThread):
                 worksheet.write(self.row_num, col_num, service[column])
             except KeyError:
                 continue
-            finally:
-                self.on_save.emit()
         self.row_num += 1
 
     def run(self):
+        print(f"Saver is running in thread: {QThread.currentThread()}")
         try: self.save()
         finally: self.complete.emit()

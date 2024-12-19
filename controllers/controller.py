@@ -50,6 +50,7 @@ from views.dialogs import (
 class Controller(QObject):
 	def __init__(self, view: MainWindow, loggerBuffer: LoggerBuffer) -> None:
 		super().__init__()
+		self.saver = None
 		self.loggerBuffer = loggerBuffer
 
 		self.view = view
@@ -427,24 +428,24 @@ class Controller(QObject):
 
 		services = sorted(services, key=lambda x: float(x["currency_to_usd"]))
 
-		splitedServices = ServicesSpliter().split(
+		splitServices = ServicesSpliter().split(
 			services,
 			int(self.save_excel_for_parse_dialog.max_count_services.text()) \
 				if self.save_excel_for_parse_dialog.max_count_services.text() else 1000
 		)
 
-		saver = ServicesSaver() \
-				.setServices(splitedServices) \
+		print(f'Saving {len(services)} to the {len(splitServices)} files...')
+
+		self.saver = ServicesSaver()
+		self.saver.setServices(splitServices) \
 				.setSavingPath(self.save_excel_for_parse_dialog.export_path)
 
-		self.view.progress_bar.setMaximum(len(services))
+		self.view.progress_bar.setMaximum(len(splitServices))
 		self.view.progress_bar.setFormat("Сохранил: %p% (%v из %m)")
-		saver.on_save.connect(self.view.update_progress)
-		saver.complete.connect(self.saver_complete)
-		saver.start()
+		self.saver.on_save.connect(self.view.update_progress)
+		self.saver.complete.connect(self.saver_complete)
+		self.saver.start()
 
-		# fixing the "QThread error" (when thread already has been closed after saver start). This line allow to new thread work
-		threading.Thread(target=saver.wait).start()
 
 	def parsing_complete(self):
 		print('[INFO] Парсинг завершен успешно.')
