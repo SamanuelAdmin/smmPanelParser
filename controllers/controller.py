@@ -405,12 +405,12 @@ class Controller(QObject):
 	@Slot(list)
 	def save_services_to_database(self, services):
 		self.view.progress_bar.setValue(0)
-		self.view.progress_bar.setMaximum(len(services))
+		self.view.progress_bar.setMaximum(len(services) // 1000 + 1)
 
 		self.serviceSaverManager = ServicesSaverManager(DatabaseService(database_controller.Database()))
 		self.serviceSaverManager.progress.connect(self.view.update_progress)
-		self.view.progress_bar.setFormat("Добавил/Изменил: %p% (%v из %m)")
-		self.serviceSaverManager.on_complite.connect(self.parsing_complete)
+		self.view.progress_bar.setFormat("Добавил/Изменил: %p% (%v K из %m K)")
+		self.serviceSaverManager.on_complete.connect(self.parsing_complete)
 		self.serviceSaverManager.setServices(services)
 
 		self.serviceSaverManager.start()
