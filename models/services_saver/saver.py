@@ -1,3 +1,5 @@
+from PyInstaller.utils.misc import save_py_data_struct
+
 from models.database_service import DatabaseService
 
 class Saver:
@@ -6,7 +8,7 @@ class Saver:
 
 	def __add_service(self, service: dict) -> None:
 		# print()
-		self.databaseServices.add_service(service, commit=False)
+		self.databaseServices.add_service(service, commit=True)
 		# print(f'Добавил сервис {service["service_id"]}({service["name"]})')
 		# print()
 
@@ -24,24 +26,31 @@ class Saver:
 						key: value,
 						'id': old_service['id']
 					},
-					commit=False
+					commit=True
 				)
 				# print(f'У {old_service["service_id"]} изменился {key} с {old_service[key]} на {value}')
 		# print()
 
 	def save(self, services: list[dict]):
+		savedServicesCount = 0
+
 		for parsed_service in services:
+			# savedServicesCount += 1
+			#
+			# if savedServicesCount % 1000 == 0:
+			# 	self.databaseServices.save_changes()
+
 			try:
 				data = self.databaseServices.get_service_by(
 					{'url': parsed_service['url'], 'service_id': parsed_service['service_id']}
 				)
 				if not data: 
-					print('Add:', parsed_service)
+					# print('Add:', parsed_service)
 					self.__add_service(parsed_service)
 				else:
-					print('Edit:', data[0], ' to:', parsed_service)
+					# print('Edit:', data[0], ' to:', parsed_service)
 					self.__update_service(parsed_service, data[0])
 			finally:
 				yield
 
-		self.databaseServices.save_changes()
+		# self.databaseServices.save_changes()
