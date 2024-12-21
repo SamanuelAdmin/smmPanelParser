@@ -405,6 +405,7 @@ class Controller(QObject):
 	@Slot(list)
 	def save_services_to_database(self, services):
 		self.view.progress_bar.setValue(0)
+		print(f'Сохранять в базу данных {len(services)}')
 		self.view.progress_bar.setMaximum(len(services) // 1000 + 1)
 
 		self.serviceSaverManager = ServicesSaverManager(DatabaseService(database_controller.Database()))

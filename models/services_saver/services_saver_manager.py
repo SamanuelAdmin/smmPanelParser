@@ -24,9 +24,11 @@ class ServicesSaverManager(QThread):
 			savedCount = 0
 
 			for _ in saver.save(self.services):
+				print()
 				savedCount += 1
 
 				if savedCount % 1000 == 0:
 					self.progress.emit()
 		finally:
+			self.databaseServices.save_changes() 
 			self.on_complete.emit()

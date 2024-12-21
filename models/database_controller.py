@@ -60,15 +60,15 @@ class ServicesDatabaseConfig:
 	
 	create_table = '''CREATE TABLE IF NOT EXISTS services (
 					id INTEGER PRIMARY KEY AUTOINCREMENT,
-					service_id INTEGER NOT NULL,
-					url TEXT NOT NULL,
-					name TEXT NOT NULL,
-					max INTEGER NOT NULL,
-					min INTEGER NOT NULL,
+					service_id INTEGER DEFAULT "не смог получить",
+					url TEXT DEFAULT "не смог получить",
+					name TEXT DEFAULT "не смог получить",
+					max INTEGER DEFAULT "не смог получить",
+					min INTEGER DEFAULT "не смог получить",
 					price REAL DEFAULT 0,
 					currency TEXT DEFAULT "$",
 					currency_to_usd REAL DEFAULT 0,
-					dns TEXT NOT NULL,
+					dns TEXT DEFAULT "не смог получить",
 					average_time TEXT DEFAULT "no average",
 					balance REAL DEFAULT "не смог получить")'''
 	
@@ -152,6 +152,8 @@ class Database(metaclass=SingletonMeta):
 	def add_service(self, data: dict, commit=True) -> None:
 		try:
 			Database.execute(ServicesDatabaseConfig.query_insert(data), data, need_commit=commit)
+		except sqlite3.IntegrityError as e:
+			print(f"Ошибка данных: {e}")
 		except Exception as err:
 			raise err
 		

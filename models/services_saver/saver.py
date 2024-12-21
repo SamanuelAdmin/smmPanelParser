@@ -8,8 +8,8 @@ class Saver:
 
 	def __add_service(self, service: dict) -> None:
 		# print()
-		self.databaseServices.add_service(service, commit=True)
-		# print(f'Добавил сервис {service["service_id"]}({service["name"]})')
+		self.databaseServices.add_service(service, commit=False)
+		print(f'Добавил сервис {service["service_id"]}({service["name"]})')
 		# print()
 
 	def __update_service(self, new_service: dict, old_service: dict) -> None:
@@ -26,31 +26,41 @@ class Saver:
 						key: value,
 						'id': old_service['id']
 					},
-					commit=True
+					commit=False
 				)
-				# print(f'У {old_service["service_id"]} изменился {key} с {old_service[key]} на {value}')
+				print(f'У {old_service["service_id"]} изменился {key} с {old_service[key]} на {value}')
 		# print()
 
 	def save(self, services: list[dict]):
 		savedServicesCount = 0
 
+		data_from_db = self.databaseServices.get_services()
+
 		for parsed_service in services:
-			# savedServicesCount += 1
-			#
-			# if savedServicesCount % 1000 == 0:
-			# 	self.databaseServices.save_changes()
+			needAdd = True
+			if savedServicesCount % 1000 == 0:
+				self.databaseServices.save_changes()
 
 			try:
-				data = self.databaseServices.get_service_by(
-					{'url': parsed_service['url'], 'service_id': parsed_service['service_id']}
-				)
-				if not data: 
-					# print('Add:', parsed_service)
+				# data = self.databaseServices.get_service_by(
+				# 	{'url': parsed_service['url'], 'service_id': parsed_service['service_id']}
+				# )
+				for service_from_db in data_from_db:
+					if service_from_db['url'] == parsed_service['url'] and service_from_db['service_id'] == parsed_service['service_id']:
+						needAdd = False
+						self.__update_service(parsed_service, service_from_db)
+						print(f'Service by {parsed_service["url"]=} and by {parsed_service["service_id"]=}:{service_from_db}')
+						print('BREAK')
+						break
+				if needAdd:
 					self.__add_service(parsed_service)
-				else:
+				# if len(data) == 0: 
+				# elif len(data) > 0:
 					# print('Edit:', data[0], ' to:', parsed_service)
-					self.__update_service(parsed_service, data[0])
+					
+				savedServicesCount += 1
 			finally:
+				print(f'Saved: {parsed_service}')
+				print(f'Saved now {savedServicesCount}')
+				# print()
 				yield
-
-		# self.databaseServices.save_changes()

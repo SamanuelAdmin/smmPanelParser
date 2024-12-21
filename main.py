@@ -1,4 +1,6 @@
 import sys
+import urllib3
+
 from datetime import datetime
 
 from PySide6.QtWidgets import QApplication
@@ -13,6 +15,8 @@ from utils.loggerbuffer import LoggerBuffer
 
 def main():
 	try:
+		urllib3.disable_warnings()
+
 		loggerBuffer = LoggerBuffer( 'LOG_' + str(datetime.now()).replace(' ', '_').replace(':', '_') + '.log')
 		consoleOutputLogger = ConsoleOutputLogger(loggerBuffer)
 		consoleOutputLogger.start()
@@ -30,7 +34,8 @@ def main():
 		
 		consoleOutputLogger.stop()
 	except KeyboardInterrupt: pass
-	finally: pass
+	finally: 
+		Database.close()
 
 if __name__ == "__main__":
     main()
